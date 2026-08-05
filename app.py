@@ -23,8 +23,17 @@ def sem_acentos(valor: str) -> str:
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     partes = [nome, marca, modelo, destaque]
-    titulo = limpar_texto(" ".join(parte for parte in partes if limpar_texto(parte)))
-    return titulo[:60].rstrip()
+    palavras = []
+    vistas = set()
+
+    for parte in partes:
+        for palavra in limpar_texto(parte).split():
+            chave = sem_acentos(palavra).casefold()
+            if chave and chave not in vistas:
+                vistas.add(chave)
+                palavras.append(palavra)
+
+    return " ".join(palavras)[:60].rstrip()
 
 
 def gerar_descricao(dados: dict) -> str:
@@ -148,56 +157,65 @@ dados = {
 
 st.divider()
 
+if "rascunho_criado" not in st.session_state:
+    st.session_state["rascunho_criado"] = False
+
 if st.button("Gerar anúncio para revisão", type="primary", use_container_width=True):
     if not dados["nome"]:
         st.error("Preencha pelo menos o nome do produto.")
     else:
-        titulo = gerar_titulo(
+        palavras = gerar_palavras_chave(dados)
+        st.session_state["resultado_titulo"] = gerar_titulo(
             dados["nome"], dados["marca"], dados["modelo"], dados["destaque"]
         )
-        descricao = gerar_descricao(dados)
-        palavras = gerar_palavras_chave(dados)
+        st.session_state["resultado_descricao"] = gerar_descricao(dados)
+        st.session_state["resultado_palavras"] = ", ".join(palavras)
+        st.session_state["dados_rascunho"] = dados.copy()
+        st.session_state["rascunho_criado"] = True
 
-        st.success("Rascunho criado. Revise tudo antes de publicar.")
-        st.subheader("Título sugerido")
-        st.text_area(
-            f"{len(titulo)}/60 caracteres",
-            value=titulo,
-            height=90,
-            key="resultado_titulo",
-        )
+if st.session_state["rascunho_criado"]:
+    st.success("Rascunho criado. Revise tudo antes de publicar.")
 
-        st.subheader("Descrição sugerida")
-        st.text_area(
-            "Descrição",
-            value=descricao,
-            height=420,
-            key="resultado_descricao",
-        )
+    st.subheader("Título sugerido")
+    st.text_area(
+        f"{len(st.session_state.get('resultado_titulo', ''))}/60 caracteres",
+        height=90,
+        key="resultado_titulo",
+    )
 
-        st.subheader("Palavras-chave")
-        texto_palavras = ", ".join(palavras)
-        st.text_area(
-            "Palavras-chave",
-            value=texto_palavras,
-            height=110,
-            key="resultado_palavras",
-        )
+    st.subheader("Descrição sugerida")
+    st.text_area(
+        "Descrição",
+        height=420,
+        key="resultado_descricao",
+    )
 
-        arquivo = {
-            "dados_do_produto": dados,
-            "titulo_sugerido": titulo,
-            "descricao_sugerida": descricao,
-            "palavras_chave": palavras,
-            "status": "rascunho_para_revisao",
-        }
-        st.download_button(
-            "Baixar rascunho",
-            data=json.dumps(arquivo, ensure_ascii=False, indent=2),
-            file_name="rascunho_luna_seller.json",
-            mime="application/json",
-            use_container_width=True,
-        )
+    st.subheader("Palavras-chave")
+    st.text_area(
+        "Palavras-chave",
+        height=110,
+        key="resultado_palavras",
+    )
+
+    palavras_editadas = [
+        limpar_texto(item)
+        for item in st.session_state["resultado_palavras"].split(",")
+        if limpar_texto(item)
+    ]
+    arquivo = {
+        "dados_do_produto": st.session_state["dados_rascunho"],
+        "titulo_sugerido": st.session_state["resultado_titulo"],
+        "descricao_sugerida": st.session_state["resultado_descricao"],
+        "palavras_chave": palavras_editadas,
+        "status": "rascunho_para_revisao",
+    }
+    st.download_button(
+        "Baixar rascunho",
+        data=json.dumps(arquivo, ensure_ascii=False, indent=2),
+        file_name="rascunho_luna_seller.json",
+        mime="application/json",
+        use_container_width=True,
+    )
 
 st.caption(
     "Esta versão não publica no Mercado Livre e não envia dados para serviços externos. "
