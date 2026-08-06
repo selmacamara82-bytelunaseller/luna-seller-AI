@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .env
 .streamlit/secrets.toml
+
+# Rascunho local do usuário
+rascunho_autosalvo.json
