@@ -110,7 +110,12 @@ def carregar_rascunho(salvo: dict) -> None:
     if isinstance(palavras_salvas, list):
         palavras_salvas = ", ".join(palavras_salvas)
 
-    st.session_state["resultado_titulo"] = salvo.get("titulo_sugerido", "")
+    st.session_state["resultado_titulo"] = gerar_titulo(
+        dados_salvos.get("nome", ""),
+        dados_salvos.get("marca", ""),
+        dados_salvos.get("modelo", ""),
+        dados_salvos.get("destaque", ""),
+    )
     st.session_state["resultado_descricao"] = salvo.get("descricao_sugerida", "")
     st.session_state["resultado_palavras"] = palavras_salvas
     st.session_state["dados_rascunho"] = dados_salvos
@@ -222,10 +227,19 @@ if st.session_state["rascunho_criado"]:
     st.success("Rascunho criado. Revise tudo antes de publicar.")
 
     st.subheader("Título sugerido")
+    dados_titulo = st.session_state.get("dados_rascunho", {})
+    titulo_atual = gerar_titulo(
+        dados_titulo.get("nome", ""),
+        dados_titulo.get("marca", ""),
+        dados_titulo.get("modelo", ""),
+        dados_titulo.get("destaque", ""),
+    )
+    st.session_state["resultado_titulo"] = titulo_atual
     st.text_area(
-        f"{len(st.session_state.get('resultado_titulo', ''))}/60 caracteres",
+        f"{len(titulo_atual)}/60 caracteres",
+        value=titulo_atual,
         height=90,
-        key="resultado_titulo",
+        disabled=True,
     )
 
     st.subheader("Descrição sugerida")
