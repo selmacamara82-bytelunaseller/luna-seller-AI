@@ -103,26 +103,49 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
     return termos
 
 
+def carregar_rascunho(salvo: dict) -> None:
+    dados_salvos = salvo.get("dados_do_produto", {})
+    for campo in [
+        "nome", "categoria", "marca", "modelo", "destaque", "cor",
+        "material", "voltagem", "dimensoes", "garantia",
+        "conteudo_embalagem", "resumo", "diferenciais",
+    ]:
+        st.session_state[f"campo_{campo}"] = dados_salvos.get(campo, "")
+
+    palavras_salvas = salvo.get("palavras_chave", [])
+    if isinstance(palavras_salvas, list):
+        palavras_salvas = ", ".join(palavras_salvas)
+
+    st.session_state["resultado_titulo"] = salvo.get("titulo_sugerido", "")
+    st.session_state["resultado_descricao"] = salvo.get("descricao_sugerida", "")
+    st.session_state["resultado_palavras"] = palavras_salvas
+    st.session_state["dados_rascunho"] = dados_salvos
+    st.session_state["rascunho_criado"] = True
+
+
 st.title("🌙 Luna Seller AI")
 st.caption("Primeira versão: crie um rascunho profissional para revisar antes de publicar.")
+
+st.subheader("Recuperar um rascunho")
+arquivo_importado = st.file_uploader(
+    "Selecione o arquivo rascunho_luna_seller.json que está na pasta Downloads",
+    type=["json"],
+    key="arquivo_rascunho_baixado",
+)
+if arquivo_importado is not None:
+    if st.button("Carregar rascunho baixado", use_container_width=True):
+        try:
+            carregar_rascunho(json.load(arquivo_importado))
+            st.success("Rascunho baixado recuperado. Confira os dados abaixo.")
+        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+            st.error("Este arquivo não pôde ser lido. Selecione o rascunho baixado pelo Luna Seller.")
 
 if ARQUIVO_AUTOSAVE.exists():
     st.info("Existe um rascunho salvo automaticamente neste computador.")
     if st.button("Recuperar último preenchimento", use_container_width=True):
         try:
             salvo = json.loads(ARQUIVO_AUTOSAVE.read_text(encoding="utf-8"))
-            dados_salvos = salvo.get("dados_do_produto", {})
-            for campo in [
-                "nome", "categoria", "marca", "modelo", "destaque", "cor",
-                "material", "voltagem", "dimensoes", "garantia",
-                "conteudo_embalagem", "resumo", "diferenciais",
-            ]:
-                st.session_state[f"campo_{campo}"] = dados_salvos.get(campo, "")
-            st.session_state["resultado_titulo"] = salvo.get("titulo_sugerido", "")
-            st.session_state["resultado_descricao"] = salvo.get("descricao_sugerida", "")
-            st.session_state["resultado_palavras"] = ", ".join(salvo.get("palavras_chave", []))
-            st.session_state["dados_rascunho"] = dados_salvos
-            st.session_state["rascunho_criado"] = True
+            carregar_rascunho(salvo)
             st.success("Último rascunho recuperado.")
         except (OSError, json.JSONDecodeError):
             st.error("Não foi possível recuperar o rascunho salvo.")
