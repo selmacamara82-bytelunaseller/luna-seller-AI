@@ -26,18 +26,12 @@ def sem_acentos(valor: str) -> str:
 
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
-    partes = [nome, marca, modelo, destaque]
-    palavras = []
-    vistas = set()
+    titulo = limpar_texto(nome)
+    if len(titulo) <= 60:
+        return titulo
 
-    for parte in partes:
-        for palavra in limpar_texto(parte).split():
-            chave = sem_acentos(palavra).casefold()
-            if chave and chave not in vistas:
-                vistas.add(chave)
-                palavras.append(palavra)
-
-    return " ".join(palavras)[:60].rstrip()
+    titulo_cortado = titulo[:61].rsplit(" ", 1)[0].rstrip()
+    return titulo_cortado or titulo[:60].rstrip()
 
 
 def gerar_descricao(dados: dict) -> str:
