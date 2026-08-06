@@ -1,8 +1,12 @@
 import json
 import re
 import unicodedata
+from pathlib import Path
 
 import streamlit as st
+
+
+ARQUIVO_AUTOSAVE = Path("rascunho_autosalvo.json")
 
 
 st.set_page_config(
@@ -102,6 +106,28 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
 st.title("🌙 Luna Seller AI")
 st.caption("Primeira versão: crie um rascunho profissional para revisar antes de publicar.")
 
+if ARQUIVO_AUTOSAVE.exists():
+    st.info("Existe um rascunho salvo automaticamente neste computador.")
+    if st.button("Recuperar último preenchimento", use_container_width=True):
+        try:
+            salvo = json.loads(ARQUIVO_AUTOSAVE.read_text(encoding="utf-8"))
+            dados_salvos = salvo.get("dados_do_produto", {})
+            for campo in [
+                "nome", "categoria", "marca", "modelo", "destaque", "cor",
+                "material", "voltagem", "dimensoes", "garantia",
+                "conteudo_embalagem", "resumo", "diferenciais",
+            ]:
+                st.session_state[f"campo_{campo}"] = dados_salvos.get(campo, "")
+            st.session_state["resultado_titulo"] = salvo.get("titulo_sugerido", "")
+            st.session_state["resultado_descricao"] = salvo.get("descricao_sugerida", "")
+            st.session_state["resultado_palavras"] = ", ".join(salvo.get("palavras_chave", []))
+            st.session_state["dados_rascunho"] = dados_salvos
+            st.session_state["rascunho_criado"] = True
+            st.success("Último rascunho recuperado.")
+        except (OSError, json.JSONDecodeError):
+            st.error("Não foi possível recuperar o rascunho salvo.")
+
+
 col_foto, col_form = st.columns([1, 2], gap="large")
 
 with col_foto:
@@ -114,29 +140,31 @@ with col_foto:
 
 with col_form:
     st.subheader("Informações do produto")
-    nome = st.text_input("Nome do produto *", placeholder="Ex.: Chaleira elétrica inox")
-    categoria = st.text_input("Categoria", placeholder="Ex.: Eletroportáteis")
-    marca = st.text_input("Marca")
-    modelo = st.text_input("Modelo")
-    destaque = st.text_input("Principal destaque", placeholder="Ex.: 1,8 L com desligamento automático")
+    nome = st.text_input("Nome do produto *", placeholder="Ex.: Chaleira elétrica inox", key="campo_nome")
+    categoria = st.text_input("Categoria", placeholder="Ex.: Eletroportáteis", key="campo_categoria")
+    marca = st.text_input("Marca", key="campo_marca")
+    modelo = st.text_input("Modelo", key="campo_modelo")
+    destaque = st.text_input("Principal destaque", placeholder="Ex.: 1,8 L com desligamento automático", key="campo_destaque")
 
     col1, col2 = st.columns(2)
     with col1:
-        cor = st.text_input("Cor")
-        material = st.text_input("Material")
-        voltagem = st.text_input("Voltagem")
+        cor = st.text_input("Cor", key="campo_cor")
+        material = st.text_input("Material", key="campo_material")
+        voltagem = st.text_input("Voltagem", key="campo_voltagem")
     with col2:
-        dimensoes = st.text_input("Dimensões")
-        garantia = st.text_input("Garantia")
-        conteudo_embalagem = st.text_input("Conteúdo da embalagem")
+        dimensoes = st.text_input("Dimensões", key="campo_dimensoes")
+        garantia = st.text_input("Garantia", key="campo_garantia")
+        conteudo_embalagem = st.text_input("Conteúdo da embalagem", key="campo_conteudo_embalagem")
 
     resumo = st.text_area(
         "Resumo de venda",
         placeholder="Explique em uma ou duas frases para quem é o produto e qual problema ele resolve.",
+        key="campo_resumo",
     )
     diferenciais = st.text_area(
         "Diferenciais (um por linha)",
         placeholder="Desligamento automático\nBase giratória\nIndicador luminoso",
+        key="campo_diferenciais",
     )
 
 dados = {
@@ -209,6 +237,15 @@ if st.session_state["rascunho_criado"]:
         "palavras_chave": palavras_editadas,
         "status": "rascunho_para_revisao",
     }
+    try:
+        ARQUIVO_AUTOSAVE.write_text(
+            json.dumps(arquivo, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        st.caption("Rascunho salvo automaticamente neste computador.")
+    except OSError:
+        st.warning("Não foi possível salvar a cópia automática.")
+
     st.download_button(
         "Baixar rascunho",
         data=json.dumps(arquivo, ensure_ascii=False, indent=2),
