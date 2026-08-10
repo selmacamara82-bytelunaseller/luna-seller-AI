@@ -27,6 +27,7 @@ def sem_acentos(valor: str) -> str:
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     partes = [nome, marca, modelo, destaque]
+        destaque = limpar_texto(destaque)
     titulo = " ".join(limpar_texto(item) for item in partes if limpar_texto(item))
 
     if len(titulo) <= 60:
