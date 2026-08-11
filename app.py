@@ -26,23 +26,53 @@ def sem_acentos(valor: str) -> str:
 
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
-    itens = []
-    palavras_vistas = set()
-    for trecho in [nome, marca, modelo, destaque]:
+    titulo = limpar_texto(nome)
+    palavras_vistas = {
+        sem_acentos(p).lower().strip(".,;:/|-_()[]{}")
+        for p in titulo.split()
+        if p
+    }
+
+    def trecho_sem_repeticao(trecho: str) -> str:
+        novas = []
         for palavra in limpar_texto(trecho).split():
             chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
             if chave and chave not in palavras_vistas:
-                candidato = " ".join(itens + [palavra]).strip()
+                novas.append(palavra)
+                palavras_vistas.add(chave)
+        return " ".join(novas)
+
+    marca_limpa = limpar_texto(marca)
+    marca_chave = sem_acentos(marca_limpa).lower()
+    if marca_limpa and marca_chave not in {"generica", "generico", "sem marca", "nao se aplica"}:
+        extra = trecho_sem_repeticao(marca_limpa)
+        if extra and len(f"{titulo} {extra}".strip()) <= 60:
+            titulo = f"{titulo} {extra}".strip()
+
+    extra_modelo = trecho_sem_repeticao(modelo)
+    if extra_modelo and len(f"{titulo} {extra_modelo}".strip()) <= 60:
+        titulo = f"{titulo} {extra_modelo}".strip()
+
+    destaque_limpo = trecho_sem_repeticao(destaque)
+    if destaque_limpo:
+        candidato_completo = f"{titulo} {destaque_limpo}".strip()
+        if len(candidato_completo) <= 60:
+            titulo = candidato_completo
+        else:
+            base = titulo
+            for palavra in destaque_limpo.split():
+                candidato = f"{base} {palavra}".strip()
                 if len(candidato) > 60:
                     break
-                itens.append(palavra)
-                palavras_vistas.add(chave)
+                base = candidato
+            titulo = base
 
     palavras_finais_proibidas = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
-    while itens and sem_acentos(itens[-1]).lower().strip(".,;:/|-_()[]{}") in palavras_finais_proibidas:
-        itens.pop()
+    partes = titulo.split()
+    while partes and sem_acentos(partes[-1]).lower().strip(".,;:/|-_()[]{}") in palavras_finais_proibidas:
+        partes.pop()
 
-    return " ".join(itens)
+    return " ".join(partes)
 
 
 def gerar_descricao(dados: dict) -> str:
