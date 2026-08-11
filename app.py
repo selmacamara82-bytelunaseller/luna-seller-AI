@@ -50,44 +50,65 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
 
 
 def gerar_descricao(dados: dict) -> str:
-    nome = dados["nome"] or "Produto"
-    linhas = [
-        f"{nome}",
-        "",
-        limpar_texto(dados["resumo"])
-        or f"Uma opção prática e funcional para quem procura {nome.lower()} com qualidade.",
-        "",
-        "PRINCIPAIS CARACTERÍSTICAS",
-    ]
+    nome = limpar_texto(dados.get("nome", "")) or "Produto"
+    resumo = limpar_texto(dados.get("resumo", ""))
+    destaque = limpar_texto(dados.get("destaque", ""))
+    conteudo = limpar_texto(dados.get("conteudo_embalagem", ""))
+    garantia = limpar_texto(dados.get("garantia", ""))
 
+    linhas = [nome, ""]
+
+    if resumo:
+        linhas.append(resumo)
+    else:
+        linhas.append(
+            f"{nome} para quem busca praticidade e funcionalidade no dia a dia."
+        )
+
+    destaques = []
+    if destaque:
+        destaques.append(destaque)
+
+    for item in dados.get("diferenciais", "").splitlines():
+        item_limpo = limpar_texto(item).lstrip("-• ")
+        if item_limpo and item_limpo not in destaques:
+            destaques.append(item_limpo)
+
+    if destaques:
+        linhas.extend(["", "DESTAQUES DO PRODUTO"])
+        linhas.extend(f"- {item}" for item in destaques)
+
+    linhas.extend(["", "PRINCIPAIS CARACTERÍSTICAS"])
     caracteristicas = [
-        ("Marca", dados["marca"]),
-        ("Modelo", dados["modelo"]),
-        ("Cor", dados["cor"]),
-        ("Material", dados["material"]),
-        ("Voltagem", dados["voltagem"]),
-        ("Dimensões", dados["dimensoes"]),
-        ("Conteúdo da embalagem", dados["conteudo_embalagem"]),
-        ("Garantia", dados["garantia"]),
+        ("Marca", dados.get("marca", "")),
+        ("Modelo", dados.get("modelo", "")),
+        ("Cor", dados.get("cor", "")),
+        ("Material", dados.get("material", "")),
+        ("Voltagem", dados.get("voltagem", "")),
+        ("Dimensões", dados.get("dimensoes", "")),
     ]
-    for rotulo, valor in caracteristicas:
-        if limpar_texto(valor):
-            linhas.append(f"- {rotulo}: {limpar_texto(valor)}")
 
-    extras = [limpar_texto(item) for item in dados["diferenciais"].splitlines() if limpar_texto(item)]
-    if extras:
-        linhas.extend(["", "DIFERENCIAIS"])
-        linhas.extend(f"- {item.lstrip('-• ')}" for item in extras)
+    for rotulo, valor in caracteristicas:
+        valor_limpo = limpar_texto(valor)
+        if valor_limpo:
+            linhas.append(f"- {rotulo}: {valor_limpo}")
+
+    if conteudo:
+        linhas.extend(["", "CONTEÚDO DA EMBALAGEM", f"- {conteudo}"])
+
+    if garantia:
+        linhas.extend(["", "GARANTIA", f"- {garantia}"])
 
     linhas.extend(
         [
             "",
             "INFORMAÇÕES IMPORTANTES",
-            "- Confira as medidas e especificações antes da compra.",
+            "- Confira as medidas, voltagem e demais especificações antes da compra.",
             "- As cores podem apresentar pequena variação conforme a tela.",
-            "- Em caso de dúvidas, utilize o campo de perguntas.",
+            "- Em caso de dúvidas, utilize o campo de perguntas antes da compra.",
         ]
     )
+
     return "\n".join(linhas)
 
 
