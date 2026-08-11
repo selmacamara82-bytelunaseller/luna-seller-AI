@@ -26,29 +26,23 @@ def sem_acentos(valor: str) -> str:
 
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
-    base = " ".join(
-        limpar_texto(item)
-        for item in [nome, marca, modelo]
-        if limpar_texto(item)
-    )
-    if len(base) > 60:
-        base = base[:61].rsplit(" ", 1)[0].rstrip() or base[:60].rstrip()
-    destaque_limpo = limpar_texto(destaque)
-    if not destaque_limpo:
-        return base
-    titulo = base
-    for palavra in destaque_limpo.split():
-        candidato = f"{titulo} {palavra}".strip()
-        if len(candidato) > 60:
-            break
-        titulo = candidato
+    itens = []
+    palavras_vistas = set()
+    for trecho in [nome, marca, modelo, destaque]:
+        for palavra in limpar_texto(trecho).split():
+            chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
+            if chave and chave not in palavras_vistas:
+                candidato = " ".join(itens + [palavra]).strip()
+                if len(candidato) > 60:
+                    break
+                itens.append(palavra)
+                palavras_vistas.add(chave)
 
     palavras_finais_proibidas = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
-    partes = titulo.split()
-    while partes and partes[-1].lower() in palavras_finais_proibidas:
-        partes.pop()
+    while itens and sem_acentos(itens[-1]).lower().strip(".,;:/|-_()[]{}") in palavras_finais_proibidas:
+        itens.pop()
 
-    return " ".join(partes)
+    return " ".join(itens)
 
 
 def gerar_descricao(dados: dict) -> str:
