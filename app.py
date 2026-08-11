@@ -26,15 +26,28 @@ def sem_acentos(valor: str) -> str:
 
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
-    partes = [nome, marca, modelo]
-        
-    titulo = " ".join(limpar_texto(item) for item in partes if limpar_texto(item))
-    titulo_com_destaque = f"{titulo} {limpar_texto(destaque)}".strip()
-    titulo = titulo_com_destaque if destaque and len(titulo_com_destaque) <= 60 else titulo 
-    if len(titulo) <= 60:
-        return titulo
-    titulo_cortado = titulo[:61].rsplit(" ", 1)[0].rstrip()
-    return titulo_cortado or titulo[:60].rstrip()
+    base = " ".join(
+        limpar_texto(item)
+        for item in [nome, marca, modelo]
+        if limpar_texto(item)
+    )
+
+    if len(base) > 60:
+        base = base[:61].rsplit(" ", 1)[0].rstrip() or base[:60].rstrip()
+
+    destaque_limpo = limpar_texto(destaque)
+    if not destaque_limpo:
+        return base
+
+    titulo = base
+    for palavra in destaque_limpo.split():
+        candidato = f"{titulo} {palavra}".strip()
+        if len(candidato) > 60:
+            break
+        titulo = candidato
+
+    return titulo
+
 
 def gerar_descricao(dados: dict) -> str:
     nome = dados["nome"] or "Produto"
