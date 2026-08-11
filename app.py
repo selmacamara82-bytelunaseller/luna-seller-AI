@@ -42,7 +42,13 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         if len(candidato) > 60:
             break
         titulo = candidato
-    return titulo
+
+    palavras_finais_proibidas = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
+    partes = titulo.split()
+    while partes and partes[-1].lower() in palavras_finais_proibidas:
+        partes.pop()
+
+    return " ".join(partes)
 
 
 def gerar_descricao(dados: dict) -> str:
