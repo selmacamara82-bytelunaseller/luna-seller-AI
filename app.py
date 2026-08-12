@@ -8,15 +8,9 @@ from pathlib import Path
 import streamlit as st
 from openai import OpenAI
 
-
 ARQUIVO_AUTOSAVE = Path("rascunho_autosalvo.json")
 
-
-st.set_page_config(
-    page_title="Luna Seller AI",
-    page_icon="🌙",
-    layout="wide",
-)
+st.set_page_config(page_title="Luna Seller AI", page_icon="🌙", layout="wide")
 
 
 def limpar_texto(valor: str) -> str:
@@ -114,9 +108,9 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
             titulo = candidato
             palavras_vistas.add(chave)
 
-    palavras_finais_proibidas = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
+    finais_proibidos = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
     partes = titulo.split()
-    while partes and sem_acentos(partes[-1]).lower().strip(".,;:/|-_()[]{}") in palavras_finais_proibidas:
+    while partes and sem_acentos(partes[-1]).lower().strip(".,;:/|-_()[]{}") in finais_proibidos:
         partes.pop()
 
     conectores = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
@@ -199,17 +193,83 @@ def gerar_descricao(dados: dict) -> str:
 
 
 def gerar_palavras_chave(dados: dict) -> list[str]:
-    base = [dados["nome"], dados["categoria"], dados["marca"], dados["modelo"], dados["cor"], dados["destaque"]]
+    nome = limpar_texto(dados.get("nome", ""))
+    categoria = limpar_texto(dados.get("categoria", ""))
+    marca = limpar_texto(dados.get("marca", ""))
+    modelo = limpar_texto(dados.get("modelo", ""))
+    cor = limpar_texto(dados.get("cor", ""))
+    destaque = limpar_texto(dados.get("destaque", ""))
+
     termos = []
     vistos = set()
-    for item in base:
-        for termo in re.split(r"[,;/|]", item or ""):
-            termo = limpar_texto(termo).lower()
-            chave = sem_acentos(termo)
-            if termo and chave not in vistos:
-                vistos.add(chave)
-                termos.append(termo)
-    return termos
+
+    def adicionar(termo: str) -> None:
+        termo = limpar_texto(termo).lower().strip(" ,.;:/|-_")
+        chave = sem_acentos(termo)
+        if termo and len(termo) >= 3 and chave not in vistos:
+            vistos.add(chave)
+            termos.append(termo)
+
+    texto_total = sem_acentos(f"{nome} {categoria} {destaque}").lower()
+
+    adicionar(nome)
+    if categoria and not valor_generico(categoria):
+        adicionar(categoria)
+
+    if "balance bike" in texto_total or "bicicleta" in texto_total:
+        adicionar("balance bike infantil")
+        adicionar("bicicleta infantil")
+        if "sem pedal" in texto_total or "sem pedais" in texto_total:
+            adicionar("bicicleta infantil sem pedal")
+            adicionar("balance bike sem pedal")
+        if re.search(r"\b4\s+rodas\b", texto_total):
+            adicionar("bicicleta infantil 4 rodas")
+            adicionar("balance bike 4 rodas")
+        if cor:
+            adicionar(f"balance bike {cor}")
+            adicionar(f"bicicleta infantil {cor}")
+        idade = re.search(r"\b(\d{1,2})\s+meses\b", texto_total)
+        if idade:
+            adicionar(f"bicicleta {idade.group(1)} meses")
+            adicionar(f"brinquedo {idade.group(1)} meses")
+        if "luz e som" in texto_total:
+            adicionar("bicicleta com luz e som")
+        adicionar("brinquedo infantil equilibrio")
+
+    if "ventilador" in texto_total:
+        adicionar("ventilador portátil")
+        adicionar("mini ventilador")
+        if "base" in texto_total:
+            adicionar("ventilador com base")
+        if cor:
+            adicionar(f"ventilador {cor}")
+
+    if "chaleira" in texto_total:
+        adicionar("chaleira elétrica")
+        if cor:
+            adicionar(f"chaleira elétrica {cor}")
+
+    for frase in [marca, modelo, cor]:
+        if frase and not valor_generico(frase):
+            adicionar(frase)
+
+    destaques_curto = [
+        (r"\bsem pedais?\b", "sem pedal"),
+        (r"\bluz e som\b", "luz e som"),
+        (r"\bcontrole remoto\b", "controle remoto"),
+        (r"\bsem fio\b", "sem fio"),
+        (r"\brecarregavel\b", "recarregável"),
+        (r"\bdobravel\b", "dobrável"),
+        (r"\bportatil\b", "portátil"),
+        (r"\bcompacto\b", "compacto"),
+        (r"\bimpermeavel\b", "impermeável"),
+        (r"\bajustavel\b", "ajustável"),
+    ]
+    for padrao, termo in destaques_curto:
+        if re.search(padrao, texto_total):
+            adicionar(termo)
+
+    return termos[:15]
 
 
 def chave_openai() -> str:
@@ -229,7 +289,8 @@ def analisar_foto_produto(foto) -> dict:
     data_url = f"data:{tipo_mime};base64,{imagem_b64}"
     client = OpenAI(api_key=api_key)
     resposta = client.responses.create(
-        model="gpt-5-mini", store=False,
+        model="gpt-5-mini",
+        store=False,
         input=[{"role": "user", "content": [
             {"type": "input_text", "text": "Analise esta foto de produto para ajudar a criar um anúncio de marketplace. Retorne SOMENTE um objeto JSON válido com estas chaves: nome, categoria, marca, modelo, destaque, cor, material, voltagem, dimensoes, conteudo_embalagem, resumo, diferenciais. Use português do Brasil. Não invente informações. Se algo não estiver visível ou não puder ser inferido com boa confiança, use string vazia. Para diferenciais, use uma string com um item por linha. Nunca adivinhe marca, modelo, voltagem, dimensões, certificações ou conteúdo da embalagem apenas pela aparência."},
             {"type": "input_image", "image_url": data_url},
@@ -374,9 +435,15 @@ if st.session_state["rascunho_criado"]:
     st.subheader("Descrição sugerida")
     st.text_area("Descrição", height=420, key="resultado_descricao")
     st.subheader("Palavras-chave")
-    st.text_area("Palavras-chave", height=110, key="resultado_palavras")
+    st.text_area("Palavras-chave", height=130, key="resultado_palavras")
     palavras_editadas = [limpar_texto(item) for item in st.session_state["resultado_palavras"].split(",") if limpar_texto(item)]
-    arquivo = {"dados_do_produto": st.session_state["dados_rascunho"], "titulo_sugerido": st.session_state["resultado_titulo"], "descricao_sugerida": st.session_state["resultado_descricao"], "palavras_chave": palavras_editadas, "status": "rascunho_para_revisao"}
+    arquivo = {
+        "dados_do_produto": st.session_state["dados_rascunho"],
+        "titulo_sugerido": st.session_state["resultado_titulo"],
+        "descricao_sugerida": st.session_state["resultado_descricao"],
+        "palavras_chave": palavras_editadas,
+        "status": "rascunho_para_revisao",
+    }
     try:
         ARQUIVO_AUTOSAVE.write_text(json.dumps(arquivo, ensure_ascii=False, indent=2), encoding="utf-8")
         st.caption("Rascunho salvo automaticamente neste computador.")
