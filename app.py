@@ -25,6 +25,11 @@ def sem_acentos(valor: str) -> str:
     return "".join(c for c in normalizado if not unicodedata.combining(c))
 
 
+def valor_generico(valor: str) -> bool:
+    chave = sem_acentos(limpar_texto(valor)).lower().strip(".,;:/|-_()[]{}")
+    return chave in {"generica", "generico", "sem marca", "nao se aplica", "n/a", "na"}
+
+
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     titulo = limpar_texto(nome)
     palavras_vistas = {
@@ -43,8 +48,7 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         return " ".join(novas)
 
     marca_limpa = limpar_texto(marca)
-    marca_chave = sem_acentos(marca_limpa).lower()
-    if marca_limpa and marca_chave not in {"generica", "generico", "sem marca", "nao se aplica"}:
+    if marca_limpa and not valor_generico(marca_limpa):
         extra = trecho_sem_repeticao(marca_limpa)
         if extra and len(f"{titulo} {extra}".strip()) <= 60:
             titulo = f"{titulo} {extra}".strip()
@@ -96,7 +100,7 @@ def gerar_descricao(dados: dict) -> str:
     if destaques:
         linhas.extend(["", "DESTAQUES DO PRODUTO"])
         linhas.extend(f"- {item}" for item in destaques)
-    linhas.extend(["", "PRINCIPAIS CARACTERÍSTICAS"])
+
     caracteristicas = [
         ("Marca", dados.get("marca", "")),
         ("Modelo", dados.get("modelo", "")),
@@ -105,10 +109,22 @@ def gerar_descricao(dados: dict) -> str:
         ("Voltagem", dados.get("voltagem", "")),
         ("Dimensões", dados.get("dimensoes", "")),
     ]
+    caracteristicas_validas = []
     for rotulo, valor in caracteristicas:
         valor_limpo = limpar_texto(valor)
-        if valor_limpo:
-            linhas.append(f"- {rotulo}: {valor_limpo}")
+        if not valor_limpo or valor_generico(valor_limpo):
+            continue
+        if rotulo == "Modelo":
+            nome_chave = sem_acentos(nome).lower()
+            modelo_chave = sem_acentos(valor_limpo).lower()
+            palavras_modelo = [p for p in modelo_chave.split() if len(p) > 2]
+            if palavras_modelo and all(p in nome_chave for p in palavras_modelo):
+                continue
+        caracteristicas_validas.append((rotulo, valor_limpo))
+    if caracteristicas_validas:
+        linhas.extend(["", "PRINCIPAIS CARACTERÍSTICAS"])
+        linhas.extend(f"- {rotulo}: {valor}" for rotulo, valor in caracteristicas_validas)
+
     if conteudo:
         linhas.extend(["", "CONTEÚDO DA EMBALAGEM", f"- {conteudo}"])
     if garantia:
@@ -147,7 +163,7 @@ def carregar_rascunho(salvo: dict) -> None:
     st.session_state["resultado_titulo"] = gerar_titulo(
         dados_salvos.get("nome", ""), dados_salvos.get("marca", ""), dados_salvos.get("modelo", ""), dados_salvos.get("destaque", "")
     )
-    st.session_state["resultado_descricao"] = salvo.get("descricao_sugerida", "")
+    st.session_state["resultado_descricao"] = gerar_descricao(dados_salvos)
     st.session_state["resultado_palavras"] = palavras_salvas
     st.session_state["dados_rascunho"] = dados_salvos
     st.session_state["rascunho_criado"] = True
