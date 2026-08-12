@@ -363,7 +363,11 @@ if ARQUIVO_AUTOSAVE.exists():
 col_foto, col_form = st.columns([1, 2], gap="large")
 with col_foto:
     st.subheader("Foto do produto")
-    foto = st.file_uploader("Envie uma imagem", type=["png", "jpg", "jpeg", "webp"], key=f"foto_produto_{st.session_state.get('foto_uploader_id', 0)}"
+    foto = st.file_uploader(
+        "Envie uma imagem",
+        type=["png", "jpg", "jpeg", "webp"],
+        key=f"foto_produto_{st.session_state.get('foto_uploader_id', 0)}",
+    )
     if foto:
         st.image(foto, caption="Imagem para conferência", use_container_width=True)
         if st.button("Analisar foto com IA", use_container_width=True):
