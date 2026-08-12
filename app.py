@@ -51,7 +51,10 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         frase = limpar_texto(frase).strip(".,;:/|-_()[]{}")
         if not frase:
             return
-        partes_frase = [p for p in frase.split() if sem_acentos(p).lower().strip(".,;:/|-_()[]{}") not in palavras_vistas]
+        partes_frase = [
+            p for p in frase.split()
+            if sem_acentos(p).lower().strip(".,;:/|-_()[]{}") not in palavras_vistas
+        ]
         frase_nova = " ".join(partes_frase).strip()
         if not frase_nova:
             return
@@ -91,16 +94,20 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         if re.search(padrao, destaque_normalizado):
             acrescentar_frase(frase)
 
+    idade = re.search(r"\b(\d{1,2})\s+meses\b", destaque_normalizado)
+    if idade:
+        acrescentar_frase(f"{idade.group(1)} Meses")
+
     ignorar = {
         "a", "o", "as", "os", "e", "de", "da", "do", "das", "dos", "com", "para", "por", "em",
         "um", "uma", "uns", "umas", "indicada", "indicado", "indicadas", "indicados", "partir", "mes",
-        "meses", "maior", "mais", "que", "uso", "ideal", "possui", "possui", "produto", "modelo",
+        "meses", "maior", "mais", "que", "uso", "ideal", "possui", "produto", "modelo",
     }
 
     for palavra in re.split(r"\s+", re.sub(r"[,;:/|()\[\]{}]+", " ", destaque_limpo)):
         palavra = palavra.strip(".,;:/|-_()[]{}")
         chave = sem_acentos(palavra).lower()
-        if not chave or chave in ignorar or chave in palavras_vistas:
+        if not chave or chave in ignorar or chave in palavras_vistas or chave.isdigit():
             continue
         candidato = f"{titulo} {palavra}".strip()
         if len(candidato) <= limite:
