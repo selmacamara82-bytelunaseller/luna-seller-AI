@@ -74,20 +74,20 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     while partes and sem_acentos(partes[-1]).lower().strip(".,;:/|-_()[]{}") in palavras_finais_proibidas:
         partes.pop()
 
-           conectores = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
-        titulo_formatado = []
-        
-        for i, palavra in enumerate(partes):
-            chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
-        
-            if i > 0 and chave in conectores:
-                titulo_formatado.append(palavra.lower())
-            elif palavra.isupper() and len(palavra) > 1:
-                titulo_formatado.append(palavra)
-            else:
-                titulo_formatado.append(palavra[:1].upper() + palavra[1:].lower())
-        
-        return " ".join(titulo_formatado)
+       conectores = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
+    titulo_formatado = []
+    
+    for i, palavra in enumerate(partes):
+        chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
+    
+        if i > 0 and chave in conectores:
+            titulo_formatado.append(palavra.lower())
+        elif palavra.isupper() and len(palavra) > 1:
+            titulo_formatado.append(palavra)
+        else:
+            titulo_formatado.append(palavra[:1].upper() + palavra[1:].lower())
+    
+    return " ".join(titulo_formatado)
 
 
 
