@@ -85,11 +85,15 @@ def gerar_descricao(dados: dict) -> str:
     destaque = limpar_texto(dados.get("destaque", ""))
     conteudo = limpar_texto(dados.get("conteudo_embalagem", ""))
     garantia = limpar_texto(dados.get("garantia", ""))
+
     linhas = [nome, ""]
     if resumo:
         linhas.append(resumo)
+    elif destaque:
+        linhas.append(f"{nome} com {destaque.lower()}, uma opção prática para o uso no dia a dia.")
     else:
-        linhas.append(f"{nome} para quem busca praticidade e funcionalidade no dia a dia.")
+        linhas.append(f"{nome} para quem busca praticidade no dia a dia.")
+
     destaques = []
     if destaque:
         destaques.append(destaque)
@@ -122,17 +126,18 @@ def gerar_descricao(dados: dict) -> str:
                 continue
         caracteristicas_validas.append((rotulo, valor_limpo))
     if caracteristicas_validas:
-        linhas.extend(["", "PRINCIPAIS CARACTERÍSTICAS"])
+        linhas.extend(["", "ESPECIFICAÇÕES"])
         linhas.extend(f"- {rotulo}: {valor}" for rotulo, valor in caracteristicas_validas)
 
     if conteudo:
         linhas.extend(["", "CONTEÚDO DA EMBALAGEM", f"- {conteudo}"])
     if garantia:
         linhas.extend(["", "GARANTIA", f"- {garantia}"])
+
     linhas.extend([
         "",
-        "INFORMAÇÕES IMPORTANTES",
-        "- Confira as medidas, voltagem e demais especificações antes da compra.",
+        "ANTES DA COMPRA",
+        "- Confira as medidas, voltagem e demais especificações informadas no anúncio.",
         "- As cores podem apresentar pequena variação conforme a tela.",
         "- Em caso de dúvidas, utilize o campo de perguntas antes da compra.",
     ])
