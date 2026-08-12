@@ -336,6 +336,7 @@ def iniciar_novo_anuncio() -> None:
     for chave in ["resultado_titulo", "resultado_descricao", "resultado_palavras", "dados_rascunho"]:
         st.session_state.pop(chave, None)
     st.session_state["rascunho_criado"] = False
+    st.session_state["foto_uploader_id"] = st.session_state.get("foto_uploader_id", 0) + 1
 
 
 st.title("🌙 Luna Seller AI")
@@ -362,7 +363,7 @@ if ARQUIVO_AUTOSAVE.exists():
 col_foto, col_form = st.columns([1, 2], gap="large")
 with col_foto:
     st.subheader("Foto do produto")
-    foto = st.file_uploader("Envie uma imagem", type=["png", "jpg", "jpeg", "webp"], key="foto_produto")
+    foto = st.file_uploader("Envie uma imagem", type=["png", "jpg", "jpeg", "webp"], key=f"foto_produto_{st.session_state.get('foto_uploader_id', 0)}"
     if foto:
         st.image(foto, caption="Imagem para conferência", use_container_width=True)
         if st.button("Analisar foto com IA", use_container_width=True):
