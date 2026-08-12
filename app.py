@@ -46,7 +46,7 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         for palavra in limpar_texto(trecho).split():
             chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
             if chave and chave not in palavras_vistas:
-                novas.append(palavra)
+                novas.append(palavra.strip(".,;:/|-_()[]{}"))
                 palavras_vistas.add(chave)
         return " ".join(novas)
 
@@ -60,7 +60,10 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     if extra_modelo and len(f"{titulo} {extra_modelo}".strip()) <= 60:
         titulo = f"{titulo} {extra_modelo}".strip()
 
-    destaque_limpo = trecho_sem_repeticao(destaque)
+    destaque_normalizado = limpar_texto(destaque)
+    destaque_normalizado = re.sub(r"\s*,\s*", " ", destaque_normalizado)
+    destaque_normalizado = re.sub(r"\be\s+com\b", "com", destaque_normalizado, flags=re.IGNORECASE)
+    destaque_limpo = trecho_sem_repeticao(destaque_normalizado)
     if destaque_limpo:
         candidato_completo = f"{titulo} {destaque_limpo}".strip()
         if len(candidato_completo) <= 60:
