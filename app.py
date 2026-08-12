@@ -34,50 +34,78 @@ def valor_generico(valor: str) -> bool:
 
 
 def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
+    limite = 60
     titulo = limpar_texto(nome)
-    palavras_vistas = {
-        sem_acentos(p).lower().strip(".,;:/|-_()[]{}")
-        for p in titulo.split()
-        if p
-    }
 
-    def palavras_sem_repeticao(trecho: str) -> list[str]:
-        novas = []
-        for palavra in limpar_texto(trecho).split():
-            palavra_limpa = palavra.strip(".,;:/|-_()[]{}")
-            chave = sem_acentos(palavra_limpa).lower()
-            if chave and chave not in palavras_vistas:
-                novas.append(palavra_limpa)
-                palavras_vistas.add(chave)
-        return novas
+    def chaves(texto: str) -> set[str]:
+        return {
+            sem_acentos(p).lower().strip(".,;:/|-_()[]{}")
+            for p in limpar_texto(texto).split()
+            if p
+        }
 
-    def acrescentar_ate_limite(base: str, palavras: list[str], limite: int = 60) -> str:
-        resultado = base
-        adicionadas = []
-        for palavra in palavras:
-            candidato = f"{resultado} {palavra}".strip()
-            if len(candidato) > limite:
-                break
-            resultado = candidato
-            adicionadas.append(palavra)
+    palavras_vistas = chaves(titulo)
 
-        finais_proibidos = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
-        while adicionadas and sem_acentos(adicionadas[-1]).lower() in finais_proibidos:
-            adicionadas.pop()
-        if adicionadas:
-            return f"{base} {' '.join(adicionadas)}".strip()
-        return base
+    def acrescentar_frase(frase: str) -> None:
+        nonlocal titulo, palavras_vistas
+        frase = limpar_texto(frase).strip(".,;:/|-_()[]{}")
+        if not frase:
+            return
+        partes_frase = [p for p in frase.split() if sem_acentos(p).lower().strip(".,;:/|-_()[]{}") not in palavras_vistas]
+        frase_nova = " ".join(partes_frase).strip()
+        if not frase_nova:
+            return
+        candidato = f"{titulo} {frase_nova}".strip()
+        if len(candidato) <= limite:
+            titulo = candidato
+            palavras_vistas.update(chaves(frase_nova))
 
     marca_limpa = limpar_texto(marca)
     if marca_limpa and not valor_generico(marca_limpa):
-        titulo = acrescentar_ate_limite(titulo, palavras_sem_repeticao(marca_limpa))
+        acrescentar_frase(marca_limpa)
 
-    titulo = acrescentar_ate_limite(titulo, palavras_sem_repeticao(modelo))
+    acrescentar_frase(modelo)
 
-    destaque_normalizado = limpar_texto(destaque)
-    destaque_normalizado = re.sub(r"\s*,\s*", " ", destaque_normalizado)
-    destaque_normalizado = re.sub(r"\be\s+com\b", "com", destaque_normalizado, flags=re.IGNORECASE)
-    titulo = acrescentar_ate_limite(titulo, palavras_sem_repeticao(destaque_normalizado))
+    destaque_limpo = limpar_texto(destaque)
+    destaque_normalizado = sem_acentos(destaque_limpo).lower()
+
+    frases_prioritarias = [
+        (r"\bsem pedais\b", "Sem Pedais"),
+        (r"\bluz e som\b", "Luz e Som"),
+        (r"\bcom luz e som\b", "Luz e Som"),
+        (r"\bdesligamento automatico\b", "Desligamento Automático"),
+        (r"\bcontrole remoto\b", "Controle Remoto"),
+        (r"\bsem fio\b", "Sem Fio"),
+        (r"\brecarregavel\b", "Recarregável"),
+        (r"\bdobravel\b", "Dobrável"),
+        (r"\bportatil\b", "Portátil"),
+        (r"\bcompacto\b", "Compacto"),
+        (r"\bimpermeavel\b", "Impermeável"),
+        (r"\bantiderrapante\b", "Antiderrapante"),
+        (r"\bajustavel\b", "Ajustável"),
+        (r"\b2 em 1\b", "2 em 1"),
+        (r"\b3 em 1\b", "3 em 1"),
+    ]
+
+    for padrao, frase in frases_prioritarias:
+        if re.search(padrao, destaque_normalizado):
+            acrescentar_frase(frase)
+
+    ignorar = {
+        "a", "o", "as", "os", "e", "de", "da", "do", "das", "dos", "com", "para", "por", "em",
+        "um", "uma", "uns", "umas", "indicada", "indicado", "indicadas", "indicados", "partir", "mes",
+        "meses", "maior", "mais", "que", "uso", "ideal", "possui", "possui", "produto", "modelo",
+    }
+
+    for palavra in re.split(r"\s+", re.sub(r"[,;:/|()\[\]{}]+", " ", destaque_limpo)):
+        palavra = palavra.strip(".,;:/|-_()[]{}")
+        chave = sem_acentos(palavra).lower()
+        if not chave or chave in ignorar or chave in palavras_vistas:
+            continue
+        candidato = f"{titulo} {palavra}".strip()
+        if len(candidato) <= limite:
+            titulo = candidato
+            palavras_vistas.add(chave)
 
     palavras_finais_proibidas = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
     partes = titulo.split()
