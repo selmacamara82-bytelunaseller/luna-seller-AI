@@ -199,6 +199,9 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
     modelo = limpar_texto(dados.get("modelo", ""))
     cor = limpar_texto(dados.get("cor", ""))
     destaque = limpar_texto(dados.get("destaque", ""))
+    material = limpar_texto(dados.get("material", ""))
+    resumo = limpar_texto(dados.get("resumo", ""))
+    diferenciais = limpar_texto(dados.get("diferenciais", ""))
 
     termos = []
     vistos = set()
@@ -210,11 +213,19 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
             vistos.add(chave)
             termos.append(termo)
 
-    texto_total = sem_acentos(f"{nome} {categoria} {destaque}").lower()
+    texto_original = " ".join([nome, categoria, marca, modelo, cor, destaque, material, resumo, diferenciais])
+    texto_total = sem_acentos(texto_original).lower()
 
     adicionar(nome)
     if categoria and not valor_generico(categoria):
         adicionar(categoria)
+
+    capacidades = re.findall(r"\b(\d+(?:[.,]\d+)?)\s*(litros?|l|ml|kg)\b", texto_total)
+    capacidade_principal = ""
+    if capacidades:
+        numero, unidade = capacidades[0]
+        unidade = "litros" if unidade in {"l", "litro", "litros"} else unidade
+        capacidade_principal = f"{numero} {unidade}"
 
     if "balance bike" in texto_total or "bicicleta" in texto_total:
         adicionar("balance bike infantil")
@@ -249,11 +260,32 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         if cor:
             adicionar(f"chaleira elétrica {cor}")
 
-    for frase in [marca, modelo, cor]:
-        if frase and not valor_generico(frase):
-            adicionar(frase)
+    if "lixeira" in texto_total or "cesto de lixo" in texto_total:
+        adicionar("lixeira com pedal")
+        adicionar("cesto de lixo com pedal")
+        if capacidade_principal:
+            adicionar(f"lixeira {capacidade_principal}")
+            adicionar(f"lixeira com pedal {capacidade_principal}")
+        if cor:
+            adicionar(f"lixeira {cor}")
+        if "preto fosco" in texto_total:
+            adicionar("lixeira preto fosco")
+        if "balde interno removivel" in texto_total or "balde removivel" in texto_total:
+            adicionar("lixeira com balde removível")
+        if "compact" in texto_total:
+            adicionar("lixeira compacta")
+        if "facil de limpar" in texto_total:
+            adicionar("lixeira fácil de limpar")
+        adicionar("lixeira para banheiro")
+        adicionar("lixeira para cozinha")
+        adicionar("lixeira para escritório")
 
-    destaques_curto = [
+    if capacidade_principal and nome:
+        adicionar(f"{nome} {capacidade_principal}")
+    if cor and nome:
+        adicionar(f"{nome} {cor}")
+
+    frases_uteis = [
         (r"\bsem pedais?\b", "sem pedal"),
         (r"\bluz e som\b", "luz e som"),
         (r"\bcontrole remoto\b", "controle remoto"),
@@ -261,13 +293,21 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         (r"\brecarregavel\b", "recarregável"),
         (r"\bdobravel\b", "dobrável"),
         (r"\bportatil\b", "portátil"),
-        (r"\bcompacto\b", "compacto"),
+        (r"\bcompact[oa]\b", "compacto"),
         (r"\bimpermeavel\b", "impermeável"),
         (r"\bajustavel\b", "ajustável"),
+        (r"\bpedal\b", "com pedal"),
+        (r"\bbalde interno removivel\b", "balde interno removível"),
+        (r"\bfacil de limpar\b", "fácil de limpar"),
+        (r"\bpreto fosco\b", "preto fosco"),
     ]
-    for padrao, termo in destaques_curto:
+    for padrao, termo in frases_uteis:
         if re.search(padrao, texto_total):
             adicionar(termo)
+
+    for frase in [marca, modelo, cor]:
+        if frase and not valor_generico(frase):
+            adicionar(frase)
 
     return termos[:15]
 
