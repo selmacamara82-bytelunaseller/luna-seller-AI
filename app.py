@@ -180,7 +180,6 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         unidade = "litros" if unidade in {"l", "litro", "litros"} else unidade
         capacidade_principal = f"{numero} {unidade}"
 
-    # Regras úteis para categorias já testadas.
     if "balance bike" in texto_total or "bicicleta" in texto_total:
         adicionar("balance bike infantil"); adicionar("bicicleta infantil")
         if "sem pedal" in texto_total or "sem pedais" in texto_total:
@@ -197,24 +196,15 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         adicionar("brinquedo infantil equilibrio")
 
     if "triciclo" in texto_total:
-        adicionar("triciclo infantil")
-        adicionar("triciclo infantil 3 rodas")
-        adicionar("triciclo com pedal")
-        adicionar("triciclo para criança")
-        adicionar("triciclo colorido")
-        adicionar("brinquedo infantil com pedal")
-        if "cesto" in texto_total:
-            adicionar("triciclo com cesto")
-        if "assento" in texto_total:
-            adicionar("triciclo com assento")
-        if "alca" in texto_total:
-            adicionar("triciclo com assento e alça")
+        adicionar("triciclo infantil"); adicionar("triciclo infantil 3 rodas"); adicionar("triciclo com pedal")
+        adicionar("triciclo para criança"); adicionar("triciclo colorido"); adicionar("brinquedo infantil com pedal")
+        if "cesto" in texto_total: adicionar("triciclo com cesto")
+        if "assento" in texto_total: adicionar("triciclo com assento")
+        if "alca" in texto_total: adicionar("triciclo com assento e alça")
         if cor:
             cor_principal = re.split(r"[,(/]", cor)[0].strip()
-            if cor_principal:
-                adicionar(f"triciclo {cor_principal}")
-        adicionar("triciclo para passeio")
-        adicionar("brinquedo infantil 3 rodas")
+            if cor_principal: adicionar(f"triciclo {cor_principal}")
+        adicionar("triciclo para passeio"); adicionar("brinquedo infantil 3 rodas")
 
     if "ventilador" in texto_total:
         adicionar("ventilador portátil"); adicionar("mini ventilador")
@@ -234,8 +224,26 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         if "facil de limpar" in texto_total: adicionar("lixeira fácil de limpar")
         adicionar("lixeira para banheiro"); adicionar("lixeira para cozinha"); adicionar("lixeira para escritório")
 
-    # Geração genérica: combina o nome com características reais detectadas,
-    # para que produtos novos também recebam uma lista útil sem regra exclusiva.
+    # Prensa francesa: termos de busca curtos, variados e úteis para marketplace.
+    if "prensa francesa" in texto_total or "french press" in texto_total:
+        adicionar("prensa francesa")
+        adicionar("french press")
+        adicionar("cafeteira francesa")
+        adicionar("cafeteira manual")
+        adicionar("prensa de café")
+        adicionar("cafeteira de vidro")
+        adicionar("cafeteira com êmbolo")
+        adicionar("prensa francesa de vidro")
+        adicionar("french press de vidro")
+        adicionar("preparo de café")
+        adicionar("café na prensa francesa")
+        adicionar("cafeteira para café e chá")
+        adicionar("prensa para café e chá")
+        if "filtro" in texto_total: adicionar("cafeteira com filtro")
+        if "metal" in texto_total: adicionar("prensa francesa filtro metálico")
+        if "vidro" in texto_total: adicionar("prensa café vidro")
+        if "alca" in texto_total: adicionar("cafeteira com alça")
+
     if capacidade_principal and nome:
         adicionar(f"{nome} {capacidade_principal}")
     if cor and nome:
