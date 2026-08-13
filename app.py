@@ -32,11 +32,7 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     titulo = limpar_texto(nome)
 
     def chaves(texto: str) -> set[str]:
-        return {
-            sem_acentos(p).lower().strip(".,;:/|-_()[]{}")
-            for p in limpar_texto(texto).split()
-            if p
-        }
+        return {sem_acentos(p).lower().strip(".,;:/|-_()[]{}") for p in limpar_texto(texto).split() if p}
 
     palavras_vistas = chaves(titulo)
 
@@ -45,10 +41,7 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
         frase = limpar_texto(frase).strip(".,;:/|-_()[]{}")
         if not frase:
             return
-        partes_frase = [
-            p for p in frase.split()
-            if sem_acentos(p).lower().strip(".,;:/|-_()[]{}") not in palavras_vistas
-        ]
+        partes_frase = [p for p in frase.split() if sem_acentos(p).lower().strip(".,;:/|-_()[]{}") not in palavras_vistas]
         frase_nova = " ".join(partes_frase).strip()
         if not frase_nova:
             return
@@ -60,44 +53,27 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     marca_limpa = limpar_texto(marca)
     if marca_limpa and not valor_generico(marca_limpa):
         acrescentar_frase(marca_limpa)
-
     acrescentar_frase(modelo)
 
     destaque_limpo = limpar_texto(destaque)
     destaque_normalizado = sem_acentos(destaque_limpo).lower()
-
     frases_prioritarias = [
-        (r"\bsem pedais\b", "Sem Pedais"),
-        (r"\bluz e som\b", "Luz e Som"),
-        (r"\bcom luz e som\b", "Luz e Som"),
-        (r"\bdesligamento automatico\b", "Desligamento Automático"),
-        (r"\bcontrole remoto\b", "Controle Remoto"),
-        (r"\bsem fio\b", "Sem Fio"),
-        (r"\brecarregavel\b", "Recarregável"),
-        (r"\bdobravel\b", "Dobrável"),
-        (r"\bportatil\b", "Portátil"),
-        (r"\bcompacto\b", "Compacto"),
-        (r"\bimpermeavel\b", "Impermeável"),
-        (r"\bantiderrapante\b", "Antiderrapante"),
-        (r"\bajustavel\b", "Ajustável"),
-        (r"\b2 em 1\b", "2 em 1"),
-        (r"\b3 em 1\b", "3 em 1"),
+        (r"\bsem pedais\b", "Sem Pedais"), (r"\bluz e som\b", "Luz e Som"),
+        (r"\bcom luz e som\b", "Luz e Som"), (r"\bdesligamento automatico\b", "Desligamento Automático"),
+        (r"\bcontrole remoto\b", "Controle Remoto"), (r"\bsem fio\b", "Sem Fio"),
+        (r"\brecarregavel\b", "Recarregável"), (r"\bdobravel\b", "Dobrável"),
+        (r"\bportatil\b", "Portátil"), (r"\bcompacto\b", "Compacto"),
+        (r"\bimpermeavel\b", "Impermeável"), (r"\bantiderrapante\b", "Antiderrapante"),
+        (r"\bajustavel\b", "Ajustável"), (r"\b2 em 1\b", "2 em 1"), (r"\b3 em 1\b", "3 em 1"),
     ]
-
     for padrao, frase in frases_prioritarias:
         if re.search(padrao, destaque_normalizado):
             acrescentar_frase(frase)
-
     idade = re.search(r"\b(\d{1,2})\s+meses\b", destaque_normalizado)
     if idade:
         acrescentar_frase(f"{idade.group(1)} Meses")
 
-    ignorar = {
-        "a", "o", "as", "os", "e", "de", "da", "do", "das", "dos", "com", "para", "por", "em",
-        "um", "uma", "uns", "umas", "indicada", "indicado", "indicadas", "indicados", "partir", "mes",
-        "meses", "maior", "mais", "que", "uso", "ideal", "possui", "produto", "modelo",
-    }
-
+    ignorar = {"a", "o", "as", "os", "e", "de", "da", "do", "das", "dos", "com", "para", "por", "em", "um", "uma", "uns", "umas", "indicada", "indicado", "indicadas", "indicados", "partir", "mes", "meses", "maior", "mais", "que", "uso", "ideal", "possui", "produto", "modelo"}
     for palavra in re.split(r"\s+", re.sub(r"[,;:/|()\[\]{}]+", " ", destaque_limpo)):
         palavra = palavra.strip(".,;:/|-_()[]{}")
         chave = sem_acentos(palavra).lower()
@@ -112,8 +88,7 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
     partes = titulo.split()
     while partes and sem_acentos(partes[-1]).lower().strip(".,;:/|-_()[]{}") in finais_proibidos:
         partes.pop()
-
-    conectores = {"e", "de", "da", "do", "das", "dos", "com", "para", "por", "em"}
+    conectores = finais_proibidos
     titulo_formatado = []
     for i, palavra in enumerate(partes):
         chave = sem_acentos(palavra).lower().strip(".,;:/|-_()[]{}")
@@ -123,7 +98,6 @@ def gerar_titulo(nome: str, marca: str, modelo: str, destaque: str) -> str:
             titulo_formatado.append(palavra)
         else:
             titulo_formatado.append(palavra[:1].upper() + palavra[1:].lower())
-
     return " ".join(titulo_formatado)
 
 
@@ -133,7 +107,6 @@ def gerar_descricao(dados: dict) -> str:
     destaque = limpar_texto(dados.get("destaque", ""))
     conteudo = limpar_texto(dados.get("conteudo_embalagem", ""))
     garantia = limpar_texto(dados.get("garantia", ""))
-
     linhas = [nome, ""]
     if resumo:
         linhas.append(resumo)
@@ -141,7 +114,6 @@ def gerar_descricao(dados: dict) -> str:
         linhas.append(f"{nome} com {destaque.lower()}, uma opção prática para o uso no dia a dia.")
     else:
         linhas.append(f"{nome} para quem busca praticidade no dia a dia.")
-
     destaques = []
     if destaque:
         destaques.append(destaque)
@@ -152,15 +124,7 @@ def gerar_descricao(dados: dict) -> str:
     if destaques:
         linhas.extend(["", "DESTAQUES DO PRODUTO"])
         linhas.extend(f"- {item}" for item in destaques)
-
-    caracteristicas = [
-        ("Marca", dados.get("marca", "")),
-        ("Modelo", dados.get("modelo", "")),
-        ("Cor", dados.get("cor", "")),
-        ("Material", dados.get("material", "")),
-        ("Voltagem", dados.get("voltagem", "")),
-        ("Dimensões", dados.get("dimensoes", "")),
-    ]
+    caracteristicas = [("Marca", dados.get("marca", "")), ("Modelo", dados.get("modelo", "")), ("Cor", dados.get("cor", "")), ("Material", dados.get("material", "")), ("Voltagem", dados.get("voltagem", "")), ("Dimensões", dados.get("dimensoes", ""))]
     caracteristicas_validas = []
     for rotulo, valor in caracteristicas:
         valor_limpo = limpar_texto(valor)
@@ -176,19 +140,11 @@ def gerar_descricao(dados: dict) -> str:
     if caracteristicas_validas:
         linhas.extend(["", "ESPECIFICAÇÕES"])
         linhas.extend(f"- {rotulo}: {valor}" for rotulo, valor in caracteristicas_validas)
-
     if conteudo:
         linhas.extend(["", "CONTEÚDO DA EMBALAGEM", f"- {conteudo}"])
     if garantia:
         linhas.extend(["", "GARANTIA", f"- {garantia}"])
-
-    linhas.extend([
-        "",
-        "ANTES DA COMPRA",
-        "- Confira as medidas, voltagem e demais especificações informadas no anúncio.",
-        "- As cores podem apresentar pequena variação conforme a tela.",
-        "- Em caso de dúvidas, utilize o campo de perguntas antes da compra.",
-    ])
+    linhas.extend(["", "ANTES DA COMPRA", "- Confira as medidas, voltagem e demais especificações informadas no anúncio.", "- As cores podem apresentar pequena variação conforme a tela.", "- Em caso de dúvidas, utilize o campo de perguntas antes da compra."])
     return "\n".join(linhas)
 
 
@@ -202,9 +158,7 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
     material = limpar_texto(dados.get("material", ""))
     resumo = limpar_texto(dados.get("resumo", ""))
     diferenciais = limpar_texto(dados.get("diferenciais", ""))
-
-    termos = []
-    vistos = set()
+    termos, vistos = [], set()
 
     def adicionar(termo: str) -> None:
         termo = limpar_texto(termo).lower().strip(" ,.;:/|-_")
@@ -215,7 +169,6 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
 
     texto_original = " ".join([nome, categoria, marca, modelo, cor, destaque, material, resumo, diferenciais])
     texto_total = sem_acentos(texto_original).lower()
-
     adicionar(nome)
     if categoria and not valor_generico(categoria):
         adicionar(categoria)
@@ -227,89 +180,101 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
         unidade = "litros" if unidade in {"l", "litro", "litros"} else unidade
         capacidade_principal = f"{numero} {unidade}"
 
+    # Regras úteis para categorias já testadas.
     if "balance bike" in texto_total or "bicicleta" in texto_total:
-        adicionar("balance bike infantil")
-        adicionar("bicicleta infantil")
+        adicionar("balance bike infantil"); adicionar("bicicleta infantil")
         if "sem pedal" in texto_total or "sem pedais" in texto_total:
-            adicionar("bicicleta infantil sem pedal")
-            adicionar("balance bike sem pedal")
+            adicionar("bicicleta infantil sem pedal"); adicionar("balance bike sem pedal")
         if re.search(r"\b4\s+rodas\b", texto_total):
-            adicionar("bicicleta infantil 4 rodas")
-            adicionar("balance bike 4 rodas")
+            adicionar("bicicleta infantil 4 rodas"); adicionar("balance bike 4 rodas")
         if cor:
-            adicionar(f"balance bike {cor}")
-            adicionar(f"bicicleta infantil {cor}")
+            adicionar(f"balance bike {cor}"); adicionar(f"bicicleta infantil {cor}")
         idade = re.search(r"\b(\d{1,2})\s+meses\b", texto_total)
         if idade:
-            adicionar(f"bicicleta {idade.group(1)} meses")
-            adicionar(f"brinquedo {idade.group(1)} meses")
+            adicionar(f"bicicleta {idade.group(1)} meses"); adicionar(f"brinquedo {idade.group(1)} meses")
         if "luz e som" in texto_total:
             adicionar("bicicleta com luz e som")
         adicionar("brinquedo infantil equilibrio")
 
-    if "ventilador" in texto_total:
-        adicionar("ventilador portátil")
-        adicionar("mini ventilador")
-        if "base" in texto_total:
-            adicionar("ventilador com base")
+    if "triciclo" in texto_total:
+        adicionar("triciclo infantil")
+        adicionar("triciclo infantil 3 rodas")
+        adicionar("triciclo com pedal")
+        adicionar("triciclo para criança")
+        adicionar("triciclo colorido")
+        adicionar("brinquedo infantil com pedal")
+        if "cesto" in texto_total:
+            adicionar("triciclo com cesto")
+        if "assento" in texto_total:
+            adicionar("triciclo com assento")
+        if "alca" in texto_total:
+            adicionar("triciclo com assento e alça")
         if cor:
-            adicionar(f"ventilador {cor}")
+            cor_principal = re.split(r"[,(/]", cor)[0].strip()
+            if cor_principal:
+                adicionar(f"triciclo {cor_principal}")
+        adicionar("triciclo para passeio")
+        adicionar("brinquedo infantil 3 rodas")
 
+    if "ventilador" in texto_total:
+        adicionar("ventilador portátil"); adicionar("mini ventilador")
+        if "base" in texto_total: adicionar("ventilador com base")
+        if cor: adicionar(f"ventilador {cor}")
     if "chaleira" in texto_total:
         adicionar("chaleira elétrica")
-        if cor:
-            adicionar(f"chaleira elétrica {cor}")
-
+        if cor: adicionar(f"chaleira elétrica {cor}")
     if "lixeira" in texto_total or "cesto de lixo" in texto_total:
-        adicionar("lixeira com pedal")
-        adicionar("cesto de lixo com pedal")
+        adicionar("lixeira com pedal"); adicionar("cesto de lixo com pedal")
         if capacidade_principal:
-            adicionar(f"lixeira {capacidade_principal}")
-            adicionar(f"lixeira com pedal {capacidade_principal}")
-        if cor:
-            adicionar(f"lixeira {cor}")
-        if "preto fosco" in texto_total:
-            adicionar("lixeira preto fosco")
-        if "balde interno removivel" in texto_total or "balde removivel" in texto_total:
-            adicionar("lixeira com balde removível")
-        if "compact" in texto_total:
-            adicionar("lixeira compacta")
-        if "facil de limpar" in texto_total:
-            adicionar("lixeira fácil de limpar")
-        adicionar("lixeira para banheiro")
-        adicionar("lixeira para cozinha")
-        adicionar("lixeira para escritório")
+            adicionar(f"lixeira {capacidade_principal}"); adicionar(f"lixeira com pedal {capacidade_principal}")
+        if cor: adicionar(f"lixeira {cor}")
+        if "preto fosco" in texto_total: adicionar("lixeira preto fosco")
+        if "balde interno removivel" in texto_total or "balde removivel" in texto_total: adicionar("lixeira com balde removível")
+        if "compact" in texto_total: adicionar("lixeira compacta")
+        if "facil de limpar" in texto_total: adicionar("lixeira fácil de limpar")
+        adicionar("lixeira para banheiro"); adicionar("lixeira para cozinha"); adicionar("lixeira para escritório")
 
+    # Geração genérica: combina o nome com características reais detectadas,
+    # para que produtos novos também recebam uma lista útil sem regra exclusiva.
     if capacidade_principal and nome:
         adicionar(f"{nome} {capacidade_principal}")
     if cor and nome:
-        adicionar(f"{nome} {cor}")
+        cor_principal = re.split(r"[,(/]", cor)[0].strip()
+        if cor_principal:
+            adicionar(f"{nome} {cor_principal}")
+    if nome and categoria and not valor_generico(categoria):
+        adicionar(f"{nome} {categoria}")
 
-    frases_uteis = [
-        (r"\bsem pedais?\b", "sem pedal"),
-        (r"\bluz e som\b", "luz e som"),
-        (r"\bcontrole remoto\b", "controle remoto"),
-        (r"\bsem fio\b", "sem fio"),
-        (r"\brecarregavel\b", "recarregável"),
-        (r"\bdobravel\b", "dobrável"),
-        (r"\bportatil\b", "portátil"),
-        (r"\bcompact[oa]\b", "compacto"),
-        (r"\bimpermeavel\b", "impermeável"),
-        (r"\bajustavel\b", "ajustável"),
-        (r"\bpedal\b", "com pedal"),
+    caracteristicas = [
+        (r"\b3\s+rodas\b|\btres\s+rodas\b", "3 rodas"),
+        (r"\b4\s+rodas\b|\bquatro\s+rodas\b", "4 rodas"),
+        (r"\bsem pedais?\b", "sem pedal"), (r"\bpedais?\b", "com pedal"),
+        (r"\bcesto(?: traseiro)?\b", "com cesto"), (r"\bassento\b", "com assento"),
+        (r"\balca\b", "com alça"), (r"\bluz e som\b", "luz e som"),
+        (r"\bcontrole remoto\b", "controle remoto"), (r"\bsem fio\b", "sem fio"),
+        (r"\brecarregavel\b", "recarregável"), (r"\bdobravel\b", "dobrável"),
+        (r"\bportatil\b", "portátil"), (r"\bcompact[oa]\b", "compacto"),
+        (r"\bimpermeavel\b", "impermeável"), (r"\bajustavel\b", "ajustável"),
         (r"\bbalde interno removivel\b", "balde interno removível"),
-        (r"\bfacil de limpar\b", "fácil de limpar"),
-        (r"\bpreto fosco\b", "preto fosco"),
+        (r"\bfacil de limpar\b", "fácil de limpar"), (r"\bpreto fosco\b", "preto fosco"),
     ]
-    for padrao, termo in frases_uteis:
+    for padrao, atributo in caracteristicas:
         if re.search(padrao, texto_total):
-            adicionar(termo)
+            adicionar(atributo)
+            if nome:
+                adicionar(f"{nome} {atributo}")
 
-    for frase in [marca, modelo, cor]:
+    idade = re.search(r"\b(\d{1,2})\s+(meses|anos)\b", texto_total)
+    if idade and nome:
+        adicionar(f"{nome} {idade.group(1)} {idade.group(2)}")
+
+    for frase in [marca, modelo]:
         if frase and not valor_generico(frase):
             adicionar(frase)
+            if nome:
+                adicionar(f"{nome} {frase}")
 
-    return termos[:15]
+    return termos[:20]
 
 
 def chave_openai() -> str:
@@ -323,23 +288,16 @@ def analisar_foto_produto(foto) -> dict:
     api_key = chave_openai()
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY não configurada")
-    bytes_foto = foto.getvalue()
-    tipo_mime = foto.type or "image/jpeg"
-    imagem_b64 = base64.b64encode(bytes_foto).decode("utf-8")
-    data_url = f"data:{tipo_mime};base64,{imagem_b64}"
+    bytes_foto = foto.getvalue(); tipo_mime = foto.type or "image/jpeg"
+    data_url = f"data:{tipo_mime};base64,{base64.b64encode(bytes_foto).decode('utf-8')}"
     client = OpenAI(api_key=api_key)
-    resposta = client.responses.create(
-        model="gpt-5-mini",
-        store=False,
-        input=[{"role": "user", "content": [
-            {"type": "input_text", "text": "Analise esta foto de produto para ajudar a criar um anúncio de marketplace. Retorne SOMENTE um objeto JSON válido com estas chaves: nome, categoria, marca, modelo, destaque, cor, material, voltagem, dimensoes, conteudo_embalagem, resumo, diferenciais. Use português do Brasil. Não invente informações. Se algo não estiver visível ou não puder ser inferido com boa confiança, use string vazia. Para diferenciais, use uma string com um item por linha. Nunca adivinhe marca, modelo, voltagem, dimensões, certificações ou conteúdo da embalagem apenas pela aparência."},
-            {"type": "input_image", "image_url": data_url},
-        ]}],
-    )
+    resposta = client.responses.create(model="gpt-5-mini", store=False, input=[{"role": "user", "content": [
+        {"type": "input_text", "text": "Analise esta foto de produto para ajudar a criar um anúncio de marketplace. Retorne SOMENTE um objeto JSON válido com estas chaves: nome, categoria, marca, modelo, destaque, cor, material, voltagem, dimensoes, conteudo_embalagem, resumo, diferenciais. Use português do Brasil. Não invente informações. Se algo não estiver visível ou não puder ser inferido com boa confiança, use string vazia. Para diferenciais, use uma string com um item por linha. Nunca adivinhe marca, modelo, voltagem, dimensões, certificações ou conteúdo da embalagem apenas pela aparência."},
+        {"type": "input_image", "image_url": data_url},
+    ]}] )
     texto = resposta.output_text.strip()
     if texto.startswith("```"):
-        texto = re.sub(r"^```(?:json)?\s*", "", texto)
-        texto = re.sub(r"\s*```$", "", texto)
+        texto = re.sub(r"^```(?:json)?\s*", "", texto); texto = re.sub(r"\s*```$", "", texto)
     dados = json.loads(texto)
     campos = ["nome", "categoria", "marca", "modelo", "destaque", "cor", "material", "voltagem", "dimensoes", "conteudo_embalagem", "resumo", "diferenciais"]
     return {campo: limpar_texto(dados.get(campo, "")) if campo != "diferenciais" else (dados.get(campo, "") or "") for campo in campos}
@@ -348,11 +306,9 @@ def analisar_foto_produto(foto) -> dict:
 def aplicar_sugestoes_foto(sugestoes: dict) -> int:
     preenchidos = 0
     for campo, valor in sugestoes.items():
-        chave = f"campo_{campo}"
-        atual = st.session_state.get(chave, "")
+        chave = f"campo_{campo}"; atual = st.session_state.get(chave, "")
         if valor and not limpar_texto(atual):
-            st.session_state[chave] = valor
-            preenchidos += 1
+            st.session_state[chave] = valor; preenchidos += 1
     return preenchidos
 
 
@@ -361,13 +317,11 @@ def carregar_rascunho(salvo: dict) -> None:
     for campo in ["nome", "categoria", "marca", "modelo", "destaque", "cor", "material", "voltagem", "dimensoes", "garantia", "conteudo_embalagem", "resumo", "diferenciais"]:
         st.session_state[f"campo_{campo}"] = dados_salvos.get(campo, "")
     palavras_salvas = salvo.get("palavras_chave", [])
-    if isinstance(palavras_salvas, list):
-        palavras_salvas = ", ".join(palavras_salvas)
+    if isinstance(palavras_salvas, list): palavras_salvas = ", ".join(palavras_salvas)
     st.session_state["resultado_titulo"] = gerar_titulo(dados_salvos.get("nome", ""), dados_salvos.get("marca", ""), dados_salvos.get("modelo", ""), dados_salvos.get("destaque", ""))
     st.session_state["resultado_descricao"] = gerar_descricao(dados_salvos)
     st.session_state["resultado_palavras"] = palavras_salvas
-    st.session_state["dados_rascunho"] = dados_salvos
-    st.session_state["rascunho_criado"] = True
+    st.session_state["dados_rascunho"] = dados_salvos; st.session_state["rascunho_criado"] = True
 
 
 def iniciar_novo_anuncio() -> None:
@@ -385,91 +339,58 @@ st.subheader("Recuperar um rascunho")
 arquivo_importado = st.file_uploader("Selecione o arquivo rascunho_luna_seller.json que está na pasta Downloads", type=["json"], key="arquivo_rascunho_baixado")
 if arquivo_importado is not None and st.button("Carregar rascunho baixado", use_container_width=True):
     try:
-        carregar_rascunho(json.load(arquivo_importado))
-        st.success("Rascunho baixado recuperado. Confira os dados abaixo.")
-    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
-        st.error("Este arquivo não pôde ser lido. Selecione o rascunho baixado pelo Luna Seller.")
-
+        carregar_rascunho(json.load(arquivo_importado)); st.success("Rascunho baixado recuperado. Confira os dados abaixo.")
+    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError): st.error("Este arquivo não pôde ser lido. Selecione o rascunho baixado pelo Luna Seller.")
 if ARQUIVO_AUTOSAVE.exists():
     st.info("Existe um rascunho salvo automaticamente neste computador.")
     if st.button("Recuperar último preenchimento", use_container_width=True):
         try:
-            salvo = json.loads(ARQUIVO_AUTOSAVE.read_text(encoding="utf-8"))
-            carregar_rascunho(salvo)
-            st.success("Último rascunho recuperado.")
-        except (OSError, json.JSONDecodeError):
-            st.error("Não foi possível recuperar o rascunho salvo.")
+            salvo = json.loads(ARQUIVO_AUTOSAVE.read_text(encoding="utf-8")); carregar_rascunho(salvo); st.success("Último rascunho recuperado.")
+        except (OSError, json.JSONDecodeError): st.error("Não foi possível recuperar o rascunho salvo.")
 
 col_foto, col_form = st.columns([1, 2], gap="large")
 with col_foto:
     st.subheader("Foto do produto")
-    foto = st.file_uploader(
-        "Envie uma imagem",
-        type=["png", "jpg", "jpeg", "webp"],
-        key=f"foto_produto_{st.session_state.get('foto_uploader_id', 0)}",
-    )
+    foto = st.file_uploader("Envie uma imagem", type=["png", "jpg", "jpeg", "webp"], key=f"foto_produto_{st.session_state.get('foto_uploader_id', 0)}")
     if foto:
         st.image(foto, caption="Imagem para conferência", use_container_width=True)
         if st.button("Analisar foto com IA", use_container_width=True):
-            if not chave_openai():
-                st.warning("A análise por foto precisa de uma chave da OpenAI configurada no aplicativo.")
+            if not chave_openai(): st.warning("A análise por foto precisa de uma chave da OpenAI configurada no aplicativo.")
             else:
                 try:
                     with st.spinner("Analisando a foto..."):
-                        sugestoes = analisar_foto_produto(foto)
-                        quantidade = aplicar_sugestoes_foto(sugestoes)
-                    if quantidade:
-                        st.success(f"Foto analisada. {quantidade} campo(s) preenchido(s) para sua revisão.")
-                    else:
-                        st.info("A foto foi analisada, mas não havia dados seguros para preencher automaticamente.")
-                except (json.JSONDecodeError, RuntimeError, ValueError) as erro:
-                    st.error(f"Não foi possível analisar a foto: {erro}")
-                except Exception:
-                    st.error("Não foi possível analisar a foto agora. Tente novamente em instantes.")
-    else:
-        st.info("A foto é opcional. Quando a análise por IA estiver configurada, ela poderá sugerir alguns campos.")
+                        sugestoes = analisar_foto_produto(foto); quantidade = aplicar_sugestoes_foto(sugestoes)
+                    if quantidade: st.success(f"Foto analisada. {quantidade} campo(s) preenchido(s) para sua revisão.")
+                    else: st.info("A foto foi analisada, mas não havia dados seguros para preencher automaticamente.")
+                except (json.JSONDecodeError, RuntimeError, ValueError) as erro: st.error(f"Não foi possível analisar a foto: {erro}")
+                except Exception: st.error("Não foi possível analisar a foto agora. Tente novamente em instantes.")
+    else: st.info("A foto é opcional. Quando a análise por IA estiver configurada, ela poderá sugerir alguns campos.")
 
 with col_form:
     st.subheader("Informações do produto")
     nome = st.text_input("Nome do produto *", placeholder="Ex.: Chaleira elétrica inox", key="campo_nome")
     categoria = st.text_input("Categoria", placeholder="Ex.: Eletroportáteis", key="campo_categoria")
-    marca = st.text_input("Marca", key="campo_marca")
-    modelo = st.text_input("Modelo", key="campo_modelo")
+    marca = st.text_input("Marca", key="campo_marca"); modelo = st.text_input("Modelo", key="campo_modelo")
     destaque = st.text_input("Principal destaque", placeholder="Ex.: 1,8 L com desligamento automático", key="campo_destaque")
     col1, col2 = st.columns(2)
     with col1:
-        cor = st.text_input("Cor", key="campo_cor")
-        material = st.text_input("Material", key="campo_material")
-        voltagem = st.text_input("Voltagem", key="campo_voltagem")
+        cor = st.text_input("Cor", key="campo_cor"); material = st.text_input("Material", key="campo_material"); voltagem = st.text_input("Voltagem", key="campo_voltagem")
     with col2:
-        dimensoes = st.text_input("Dimensões", key="campo_dimensoes")
-        garantia = st.text_input("Garantia", key="campo_garantia")
-        conteudo_embalagem = st.text_input("Conteúdo da embalagem", key="campo_conteudo_embalagem")
+        dimensoes = st.text_input("Dimensões", key="campo_dimensoes"); garantia = st.text_input("Garantia", key="campo_garantia"); conteudo_embalagem = st.text_input("Conteúdo da embalagem", key="campo_conteudo_embalagem")
     resumo = st.text_area("Resumo de venda", placeholder="Explique em uma ou duas frases para quem é o produto e qual problema ele resolve.", key="campo_resumo")
     diferenciais = st.text_area("Diferenciais (um por linha)", placeholder="Desligamento automático\nBase giratória\nIndicador luminoso", key="campo_diferenciais")
 
-dados = {
-    "nome": limpar_texto(nome), "categoria": limpar_texto(categoria), "marca": limpar_texto(marca), "modelo": limpar_texto(modelo),
-    "destaque": limpar_texto(destaque), "cor": limpar_texto(cor), "material": limpar_texto(material), "voltagem": limpar_texto(voltagem),
-    "dimensoes": limpar_texto(dimensoes), "garantia": limpar_texto(garantia), "conteudo_embalagem": limpar_texto(conteudo_embalagem),
-    "resumo": limpar_texto(resumo), "diferenciais": diferenciais,
-}
-
+dados = {"nome": limpar_texto(nome), "categoria": limpar_texto(categoria), "marca": limpar_texto(marca), "modelo": limpar_texto(modelo), "destaque": limpar_texto(destaque), "cor": limpar_texto(cor), "material": limpar_texto(material), "voltagem": limpar_texto(voltagem), "dimensoes": limpar_texto(dimensoes), "garantia": limpar_texto(garantia), "conteudo_embalagem": limpar_texto(conteudo_embalagem), "resumo": limpar_texto(resumo), "diferenciais": diferenciais}
 st.divider()
-if "rascunho_criado" not in st.session_state:
-    st.session_state["rascunho_criado"] = False
-
+if "rascunho_criado" not in st.session_state: st.session_state["rascunho_criado"] = False
 if st.button("Gerar anúncio para revisão", type="primary", use_container_width=True):
-    if not dados["nome"]:
-        st.error("Preencha pelo menos o nome do produto.")
+    if not dados["nome"]: st.error("Preencha pelo menos o nome do produto.")
     else:
         palavras = gerar_palavras_chave(dados)
         st.session_state["resultado_titulo"] = gerar_titulo(dados["nome"], dados["marca"], dados["modelo"], dados["destaque"])
         st.session_state["resultado_descricao"] = gerar_descricao(dados)
         st.session_state["resultado_palavras"] = ", ".join(palavras)
-        st.session_state["dados_rascunho"] = dados.copy()
-        st.session_state["rascunho_criado"] = True
-
+        st.session_state["dados_rascunho"] = dados.copy(); st.session_state["rascunho_criado"] = True
 if st.session_state["rascunho_criado"]:
     st.success("Rascunho criado. Revise tudo antes de publicar.")
     st.subheader("Título sugerido")
@@ -477,27 +398,14 @@ if st.session_state["rascunho_criado"]:
     titulo_atual = gerar_titulo(dados_titulo.get("nome", ""), dados_titulo.get("marca", ""), dados_titulo.get("modelo", ""), dados_titulo.get("destaque", ""))
     st.session_state["resultado_titulo"] = titulo_atual
     st.text_area(f"{len(titulo_atual)}/60 caracteres", value=titulo_atual, height=90, disabled=True)
-    st.subheader("Descrição sugerida")
-    st.text_area("Descrição", height=420, key="resultado_descricao")
-    st.subheader("Palavras-chave")
-    st.text_area("Palavras-chave", height=130, key="resultado_palavras")
+    st.subheader("Descrição sugerida"); st.text_area("Descrição", height=420, key="resultado_descricao")
+    st.subheader("Palavras-chave"); st.text_area("Palavras-chave", height=130, key="resultado_palavras")
     palavras_editadas = [limpar_texto(item) for item in st.session_state["resultado_palavras"].split(",") if limpar_texto(item)]
-    arquivo = {
-        "dados_do_produto": st.session_state["dados_rascunho"],
-        "titulo_sugerido": st.session_state["resultado_titulo"],
-        "descricao_sugerida": st.session_state["resultado_descricao"],
-        "palavras_chave": palavras_editadas,
-        "status": "rascunho_para_revisao",
-    }
+    arquivo = {"dados_do_produto": st.session_state["dados_rascunho"], "titulo_sugerido": st.session_state["resultado_titulo"], "descricao_sugerida": st.session_state["resultado_descricao"], "palavras_chave": palavras_editadas, "status": "rascunho_para_revisao"}
     try:
-        ARQUIVO_AUTOSAVE.write_text(json.dumps(arquivo, ensure_ascii=False, indent=2), encoding="utf-8")
-        st.caption("Rascunho salvo automaticamente neste computador.")
-    except OSError:
-        st.warning("Não foi possível salvar a cópia automática.")
+        ARQUIVO_AUTOSAVE.write_text(json.dumps(arquivo, ensure_ascii=False, indent=2), encoding="utf-8"); st.caption("Rascunho salvo automaticamente neste computador.")
+    except OSError: st.warning("Não foi possível salvar a cópia automática.")
     col_baixar, col_novo = st.columns(2)
-    with col_baixar:
-        st.download_button("Baixar rascunho", data=json.dumps(arquivo, ensure_ascii=False, indent=2), file_name="rascunho_luna_seller.json", mime="application/json", use_container_width=True)
-    with col_novo:
-        st.button("Novo anúncio", on_click=iniciar_novo_anuncio, use_container_width=True)
-
+    with col_baixar: st.download_button("Baixar rascunho", data=json.dumps(arquivo, ensure_ascii=False, indent=2), file_name="rascunho_luna_seller.json", mime="application/json", use_container_width=True)
+    with col_novo: st.button("Novo anúncio", on_click=iniciar_novo_anuncio, use_container_width=True)
 st.caption("Esta versão não publica no Mercado Livre. A análise por foto, quando ativada, envia apenas a imagem selecionada à OpenAI para sugerir campos; revise tudo antes de usar.")
