@@ -156,6 +156,25 @@ def gerar_titulo(dados: dict) -> str:
     return formatar_titulo(titulo or base)
 
 
+def orientacoes_antes_compra(dados: dict, variacoes: list[str]) -> list[str]:
+    linhas = ["ANTES DA COMPRA"]
+    dimensoes = limpar_texto(dados.get("dimensoes", ""))
+    voltagem = limpar_texto(dados.get("voltagem", ""))
+    cor = limpar_texto(dados.get("cor", ""))
+    if dimensoes:
+        linhas.append("- Confira as dimensões informadas no anúncio antes da compra.")
+    if voltagem:
+        linhas.append("- Confira a voltagem informada no anúncio antes da compra.")
+    if variacoes:
+        linhas.append("- Selecione a variação desejada antes de finalizar a compra.")
+    elif cor:
+        linhas.append("- As cores podem apresentar pequena variação conforme a tela.")
+    if not dimensoes and not voltagem and not cor and not variacoes:
+        linhas.append("- Confira as características e demais especificações informadas no anúncio.")
+    linhas.append("- Em caso de dúvidas, utilize o campo de perguntas antes da compra.")
+    return linhas
+
+
 def gerar_descricao(dados: dict) -> str:
     api_key = chave_openai()
     instrucoes = limpar_texto(dados.get("instrucoes_ia", ""))
@@ -165,7 +184,8 @@ def gerar_descricao(dados: dict) -> str:
             "Crie uma descrição profissional em português do Brasil para marketplace. Retorne SOMENTE JSON válido no formato {\"descricao\":\"...\"}. "
             "Use seções claras. Se houver variações de cor, crie uma seção VARIAÇÕES e liste exatamente as cores declaradas pela vendedora; diga para o cliente selecionar a cor desejada antes da compra. "
             "Não trate variações como kit e não apresente a cor da foto/referência como única cor do anúncio. "
-            "Se houver kit, deixe quantidade e conteúdo claros. Não invente dados. " + contexto_ia(dados)
+            "Se houver kit, deixe quantidade e conteúdo claros. Na seção antes da compra, mencione dimensões somente se dimensões tiverem sido informadas e voltagem somente se voltagem tiver sido informada. "
+            "Não invente dados. " + contexto_ia(dados)
         )
         try:
             client = OpenAI(api_key=api_key)
@@ -204,7 +224,7 @@ def gerar_descricao(dados: dict) -> str:
         linhas.extend(["", "ESPECIFICAÇÕES"] + [f"- {r}: {v}" for r,v in validas])
     if conteudo: linhas.extend(["", "CONTEÚDO DA EMBALAGEM", f"- {conteudo}"])
     if garantia: linhas.extend(["", "GARANTIA", f"- {garantia}"])
-    linhas.extend(["", "ANTES DA COMPRA", "- Confira as medidas, voltagem e demais especificações informadas no anúncio.", "- As cores podem apresentar pequena variação conforme a tela.", "- Em caso de dúvidas, utilize o campo de perguntas antes da compra."])
+    linhas.extend([""] + orientacoes_antes_compra(dados, variacoes))
     return "\n".join(linhas)
 
 
