@@ -148,7 +148,27 @@ def gerar_descricao(dados: dict) -> str:
     return "\n".join(linhas)
 
 
-def gerar_palavras_chave(dados: dict) -> list[str]:
+def normalizar_lista_palavras(itens) -> list[str]:
+    if not isinstance(itens, list):
+        return []
+    resultado = []
+    vistos = set()
+    genericos = {"produto", "modelo", "qualidade", "oferta", "promoção", "barato", "original", "novo"}
+    for item in itens:
+        termo = limpar_texto(str(item)).lower().strip(" ,.;:/|-_")
+        chave = sem_acentos(termo)
+        if not termo or len(termo) < 3 or len(termo) > 55:
+            continue
+        if chave in genericos or chave in vistos:
+            continue
+        vistos.add(chave)
+        resultado.append(termo)
+        if len(resultado) >= 20:
+            break
+    return resultado
+
+
+def gerar_palavras_chave_fallback(dados: dict) -> list[str]:
     nome = limpar_texto(dados.get("nome", ""))
     categoria = limpar_texto(dados.get("categoria", ""))
     marca = limpar_texto(dados.get("marca", ""))
@@ -156,133 +176,103 @@ def gerar_palavras_chave(dados: dict) -> list[str]:
     cor = limpar_texto(dados.get("cor", ""))
     destaque = limpar_texto(dados.get("destaque", ""))
     material = limpar_texto(dados.get("material", ""))
-    resumo = limpar_texto(dados.get("resumo", ""))
     diferenciais = limpar_texto(dados.get("diferenciais", ""))
-    termos, vistos = [], set()
+    texto_total = sem_acentos(" ".join([nome, categoria, marca, modelo, cor, destaque, material, diferenciais])).lower()
+
+    termos = []
+    vistos = set()
 
     def adicionar(termo: str) -> None:
         termo = limpar_texto(termo).lower().strip(" ,.;:/|-_")
         chave = sem_acentos(termo)
-        if termo and len(termo) >= 3 and chave not in vistos:
-            vistos.add(chave)
-            termos.append(termo)
+        if not termo or len(termo) < 3 or len(termo) > 55 or chave in vistos:
+            return
+        vistos.add(chave)
+        termos.append(termo)
 
-    texto_original = " ".join([nome, categoria, marca, modelo, cor, destaque, material, resumo, diferenciais])
-    texto_total = sem_acentos(texto_original).lower()
-    adicionar(nome)
+    nome_limpo = re.sub(r"\([^)]*\)", "", nome).strip()
+    palavras_nome = [p for p in nome_limpo.split() if len(p) > 2]
+    base = " ".join(palavras_nome[:4]) or nome_limpo
+    adicionar(base)
+
     if categoria and not valor_generico(categoria):
         adicionar(categoria)
-
-    capacidades = re.findall(r"\b(\d+(?:[.,]\d+)?)\s*(litros?|l|ml|kg)\b", texto_total)
-    capacidade_principal = ""
-    if capacidades:
-        numero, unidade = capacidades[0]
-        unidade = "litros" if unidade in {"l", "litro", "litros"} else unidade
-        capacidade_principal = f"{numero} {unidade}"
-
-    if "balance bike" in texto_total or "bicicleta" in texto_total:
-        adicionar("balance bike infantil"); adicionar("bicicleta infantil")
-        if "sem pedal" in texto_total or "sem pedais" in texto_total:
-            adicionar("bicicleta infantil sem pedal"); adicionar("balance bike sem pedal")
-        if re.search(r"\b4\s+rodas\b", texto_total):
-            adicionar("bicicleta infantil 4 rodas"); adicionar("balance bike 4 rodas")
-        if cor:
-            adicionar(f"balance bike {cor}"); adicionar(f"bicicleta infantil {cor}")
-        idade = re.search(r"\b(\d{1,2})\s+meses\b", texto_total)
-        if idade:
-            adicionar(f"bicicleta {idade.group(1)} meses"); adicionar(f"brinquedo {idade.group(1)} meses")
-        if "luz e som" in texto_total:
-            adicionar("bicicleta com luz e som")
-        adicionar("brinquedo infantil equilibrio")
-
-    if "triciclo" in texto_total:
-        adicionar("triciclo infantil"); adicionar("triciclo infantil 3 rodas"); adicionar("triciclo com pedal")
-        adicionar("triciclo para criança"); adicionar("triciclo colorido"); adicionar("brinquedo infantil com pedal")
-        if "cesto" in texto_total: adicionar("triciclo com cesto")
-        if "assento" in texto_total: adicionar("triciclo com assento")
-        if "alca" in texto_total: adicionar("triciclo com assento e alça")
-        if cor:
-            cor_principal = re.split(r"[,(/]", cor)[0].strip()
-            if cor_principal: adicionar(f"triciclo {cor_principal}")
-        adicionar("triciclo para passeio"); adicionar("brinquedo infantil 3 rodas")
-
-    if "ventilador" in texto_total:
-        adicionar("ventilador portátil"); adicionar("mini ventilador")
-        if "base" in texto_total: adicionar("ventilador com base")
-        if cor: adicionar(f"ventilador {cor}")
-    if "chaleira" in texto_total:
-        adicionar("chaleira elétrica")
-        if cor: adicionar(f"chaleira elétrica {cor}")
-    if "lixeira" in texto_total or "cesto de lixo" in texto_total:
-        adicionar("lixeira com pedal"); adicionar("cesto de lixo com pedal")
-        if capacidade_principal:
-            adicionar(f"lixeira {capacidade_principal}"); adicionar(f"lixeira com pedal {capacidade_principal}")
-        if cor: adicionar(f"lixeira {cor}")
-        if "preto fosco" in texto_total: adicionar("lixeira preto fosco")
-        if "balde interno removivel" in texto_total or "balde removivel" in texto_total: adicionar("lixeira com balde removível")
-        if "compact" in texto_total: adicionar("lixeira compacta")
-        if "facil de limpar" in texto_total: adicionar("lixeira fácil de limpar")
-        adicionar("lixeira para banheiro"); adicionar("lixeira para cozinha"); adicionar("lixeira para escritório")
-
-    # Prensa francesa: termos de busca curtos, variados e úteis para marketplace.
-    if "prensa francesa" in texto_total or "french press" in texto_total:
-        adicionar("prensa francesa")
-        adicionar("french press")
-        adicionar("cafeteira francesa")
-        adicionar("cafeteira manual")
-        adicionar("prensa de café")
-        adicionar("cafeteira de vidro")
-        adicionar("cafeteira com êmbolo")
-        adicionar("prensa francesa de vidro")
-        adicionar("french press de vidro")
-        adicionar("preparo de café")
-        adicionar("café na prensa francesa")
-        adicionar("cafeteira para café e chá")
-        adicionar("prensa para café e chá")
-        if "filtro" in texto_total: adicionar("cafeteira com filtro")
-        if "metal" in texto_total: adicionar("prensa francesa filtro metálico")
-        if "vidro" in texto_total: adicionar("prensa café vidro")
-        if "alca" in texto_total: adicionar("cafeteira com alça")
-
-    if capacidade_principal and nome:
-        adicionar(f"{nome} {capacidade_principal}")
-    if cor and nome:
+    if marca and not valor_generico(marca):
+        adicionar(f"{base} {marca}")
+    if modelo and not valor_generico(modelo):
+        adicionar(f"{base} {modelo}")
+    if cor and not valor_generico(cor):
         cor_principal = re.split(r"[,(/]", cor)[0].strip()
         if cor_principal:
-            adicionar(f"{nome} {cor_principal}")
-    if nome and categoria and not valor_generico(categoria):
-        adicionar(f"{nome} {categoria}")
+            adicionar(f"{base} {cor_principal}")
+    if material and not valor_generico(material):
+        material_curto = " ".join(material.split()[:3])
+        adicionar(f"{base} {material_curto}")
 
-    caracteristicas = [
-        (r"\b3\s+rodas\b|\btres\s+rodas\b", "3 rodas"),
-        (r"\b4\s+rodas\b|\bquatro\s+rodas\b", "4 rodas"),
-        (r"\bsem pedais?\b", "sem pedal"), (r"\bpedais?\b", "com pedal"),
-        (r"\bcesto(?: traseiro)?\b", "com cesto"), (r"\bassento\b", "com assento"),
-        (r"\balca\b", "com alça"), (r"\bluz e som\b", "luz e som"),
-        (r"\bcontrole remoto\b", "controle remoto"), (r"\bsem fio\b", "sem fio"),
-        (r"\brecarregavel\b", "recarregável"), (r"\bdobravel\b", "dobrável"),
-        (r"\bportatil\b", "portátil"), (r"\bcompact[oa]\b", "compacto"),
-        (r"\bimpermeavel\b", "impermeável"), (r"\bajustavel\b", "ajustável"),
-        (r"\bbalde interno removivel\b", "balde interno removível"),
-        (r"\bfacil de limpar\b", "fácil de limpar"), (r"\bpreto fosco\b", "preto fosco"),
+    unidades = re.findall(r"\b\d+(?:[.,]\d+)?\s*(?:ml|l|litros?|kg|g|cm|mm|w|v)\b", texto_total)
+    for unidade in unidades[:3]:
+        adicionar(f"{base} {unidade}")
+
+    atributos = [
+        (r"\bsem fio\b", "sem fio"), (r"\brecarregavel\b", "recarregável"),
+        (r"\bdobravel\b", "dobrável"), (r"\bportatil\b", "portátil"),
+        (r"\bcompact[oa]\b", "compacto"), (r"\bimpermeavel\b", "impermeável"),
+        (r"\bajustavel\b", "ajustável"), (r"\bcontrole remoto\b", "controle remoto"),
+        (r"\bluz e som\b", "luz e som"), (r"\bpedais?\b", "com pedal"),
+        (r"\bsem pedais?\b", "sem pedal"), (r"\bcesto\b", "com cesto"),
+        (r"\balca\b", "com alça"), (r"\bfiltro\b", "com filtro"),
+        (r"\bvidro\b", "de vidro"), (r"\bmetal\b", "metálico"),
     ]
-    for padrao, atributo in caracteristicas:
+    for padrao, atributo in atributos:
         if re.search(padrao, texto_total):
-            adicionar(atributo)
-            if nome:
-                adicionar(f"{nome} {atributo}")
+            adicionar(f"{base} {atributo}")
 
-    idade = re.search(r"\b(\d{1,2})\s+(meses|anos)\b", texto_total)
-    if idade and nome:
-        adicionar(f"{nome} {idade.group(1)} {idade.group(2)}")
+    palavras_categoria = [p for p in categoria.split() if len(p) > 3]
+    for palavra in palavras_categoria[:3]:
+        adicionar(f"{base} {palavra}")
 
-    for frase in [marca, modelo]:
-        if frase and not valor_generico(frase):
-            adicionar(frase)
-            if nome:
-                adicionar(f"{nome} {frase}")
+    return termos[:15]
 
-    return termos[:20]
+
+def gerar_palavras_chave(dados: dict) -> list[str]:
+    """Gera termos de busca sem depender de regras fixas por categoria."""
+    api_key = chave_openai()
+    if api_key:
+        campos_seguros = {
+            chave: limpar_texto(valor)
+            for chave, valor in dados.items()
+            if limpar_texto(valor)
+        }
+        instrucao = (
+            "Crie palavras-chave para um anúncio de marketplace no Brasil. "
+            "Retorne SOMENTE JSON válido no formato {\"palavras_chave\":[...]}. "
+            "Gere entre 15 e 20 frases de busca curtas, naturais e diferentes entre si. "
+            "Priorize como um comprador realmente pesquisaria o produto. "
+            "Misture nome popular, sinônimos comuns quando forem seguros, tipo do produto, uso, material, cor, capacidade e características informadas. "
+            "Não invente marca, modelo, tamanho, capacidade, certificação, voltagem ou qualquer característica ausente. "
+            "Evite frases longas, palavras isoladas genéricas, repetição do nome completo em todas as opções, categorias grudadas ao nome e termos promocionais como barato, promoção ou melhor. "
+            "Cada item deve ter no máximo 55 caracteres. Dados do produto: "
+            + json.dumps(campos_seguros, ensure_ascii=False)
+        )
+        try:
+            client = OpenAI(api_key=api_key)
+            resposta = client.responses.create(
+                model="gpt-5-mini",
+                store=False,
+                input=instrucao,
+            )
+            texto = resposta.output_text.strip()
+            if texto.startswith("```"):
+                texto = re.sub(r"^```(?:json)?\s*", "", texto)
+                texto = re.sub(r"\s*```$", "", texto)
+            objeto = json.loads(texto)
+            palavras = normalizar_lista_palavras(objeto.get("palavras_chave", []))
+            if len(palavras) >= 10:
+                return palavras
+        except Exception:
+            pass
+
+    return gerar_palavras_chave_fallback(dados)
 
 
 def chave_openai() -> str:
