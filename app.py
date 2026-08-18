@@ -322,6 +322,39 @@ def iniciar_novo_anuncio() -> None:
     st.session_state["foto_uploader_id"] = st.session_state.get("foto_uploader_id", 0) + 1
 
 
+def avisos_revisao_inteligente(dados: dict) -> list[str]:
+    avisos = []
+    texto_produto = sem_acentos(" ".join([
+        limpar_texto(dados.get("nome", "")),
+        limpar_texto(dados.get("categoria", "")),
+        limpar_texto(dados.get("destaque", "")),
+        limpar_texto(dados.get("resumo", "")),
+        limpar_texto(dados.get("diferenciais", "")),
+    ])).lower()
+
+    termos_eletricos = [
+        "eletrico", "eletrica", "eletronico", "eletronica", "eletroportatil",
+        "liquidificador", "cafeteira eletrica", "chaleira eletrica", "mixer",
+        "secador", "ferro de passar", "ventilador", "aspirador", "aquecedor"
+    ]
+    if any(termo in texto_produto for termo in termos_eletricos) and not limpar_texto(dados.get("voltagem", "")):
+        avisos.append("Voltagem não informada para um produto que pode precisar dessa especificação.")
+
+    termos_dimensoes = ["cesto", "organizador", "prateleira", "estante", "mesa", "cadeira", "armario", "movel"]
+    if any(termo in texto_produto for termo in termos_dimensoes) and not limpar_texto(dados.get("dimensoes", "")):
+        avisos.append("Dimensões não informadas; confira se são importantes para este produto.")
+
+    instrucoes = limpar_texto(dados.get("instrucoes_ia", ""))
+    kit = re.search(r"\b(?:kit|conjunto)\s+(?:com\s+|de\s+)?(\d+)\b", sem_acentos(instrucoes).lower())
+    if kit:
+        quantidade = kit.group(1)
+        conteudo = sem_acentos(limpar_texto(dados.get("conteudo_embalagem", ""))).lower()
+        if quantidade not in conteudo:
+            avisos.append(f"O pedido indica kit com {quantidade} unidades; confira o conteúdo da embalagem.")
+
+    return avisos
+
+
 st.title("🌙 Luna Seller AI")
 st.caption("Crie um rascunho profissional para revisar antes de publicar.")
 st.subheader("Recuperar um rascunho")
@@ -401,19 +434,11 @@ if st.session_state["rascunho_criado"]:
     except OSError:
         st.warning("Não foi possível salvar a cópia automática.")
 
-    avisos_revisao = []
-    dados_revisao = st.session_state["dados_rascunho"]
-
-    if not limpar_texto(dados_revisao.get("marca", "")):
-        avisos_revisao.append("Marca não informada.")
-
-    if not limpar_texto(dados_revisao.get("modelo", "")):
-        avisos_revisao.append("Modelo não informado.")
-
+    avisos_revisao = avisos_revisao_inteligente(st.session_state["dados_rascunho"])
     if avisos_revisao:
         st.warning("⚠️ Antes de baixar, confira: " + " | ".join(avisos_revisao))
     else:
-        st.success("✅ Informações principais conferidas.")
+        st.success("✅ Revisão automática concluída: nenhum alerta importante encontrado.")
 
     col_baixar,col_novo = st.columns(2)
     with col_baixar:
