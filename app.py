@@ -340,7 +340,7 @@ def avisos_revisao_inteligente(dados: dict) -> list[str]:
     if any(termo in texto_produto for termo in termos_eletricos) and not limpar_texto(dados.get("voltagem", "")):
         avisos.append("Voltagem não informada para um produto que pode precisar dessa especificação.")
 
-    termos_dimensoes = ["cesto", "organizador", "prateleira", "estante", "mesa", "cadeira", "armario", "movel"]
+    termos_dimensoes = ["cesto", "organizador", "prateleira", "estante", "cadeira", "armario", "movel"]
     if any(termo in texto_produto for termo in termos_dimensoes) and not limpar_texto(dados.get("dimensoes", "")):
         avisos.append("Dimensões não informadas; confira se são importantes para este produto.")
 
