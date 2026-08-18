@@ -400,6 +400,20 @@ if st.session_state["rascunho_criado"]:
         st.caption("Rascunho salvo automaticamente neste computador.")
     except OSError:
         st.warning("Não foi possível salvar a cópia automática.")
+
+        avisos_revisao = []
+    dados_revisao = st.session_state["dados_rascunho"]
+
+    if not limpar_texto(dados_revisao.get("marca", "")):
+        avisos_revisao.append("Marca não informada.")
+
+    if not limpar_texto(dados_revisao.get("modelo", "")):
+        avisos_revisao.append("Modelo não informado.")
+
+    if avisos_revisao:
+        st.warning("⚠️ Antes de baixar, confira: " + " | ".join(avisos_revisao))
+    else:
+        st.success("✅ Informações principais conferidas.")
     col_baixar,col_novo = st.columns(2)
     with col_baixar:
         st.download_button("Baixar rascunho", data=json.dumps(arquivo, ensure_ascii=False, indent=2), file_name="rascunho_luna_seller.json", mime="application/json", use_container_width=True)
