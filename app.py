@@ -9,7 +9,7 @@ from pathlib import Path
 
 import streamlit as st
 from openai import OpenAI
-from mercado_livre import criar_estado, criar_url_autorizacao, trocar_codigo_por_token, consultar_usuario, listar_anuncios
+from mercado_livre import criar_estado, criar_url_autorizacao, trocar_codigo_por_token, consultar_usuario, listar_anuncios, consultar_anuncio
 
 ARQUIVO_AUTOSAVE = Path("rascunho_autosalvo.json")
 st.set_page_config(page_title="Luna Seller AI", page_icon="🌙", layout="wide")
