@@ -9,7 +9,7 @@ from pathlib import Path
 
 import streamlit as st
 from openai import OpenAI
-from mercado_livre import criar_estado, criar_url_autorizacao, trocar_codigo_por_token, consultar_usuario
+from mercado_livre import criar_estado, criar_url_autorizacao, trocar_codigo_por_token, consultar_usuario, listar_anuncios
 
 ARQUIVO_AUTOSAVE = Path("rascunho_autosalvo.json")
 st.set_page_config(page_title="Luna Seller AI", page_icon="🌙", layout="wide")
@@ -526,3 +526,29 @@ else:
             url_autorizacao_ml,
             use_container_width=True,
         )
+
+if st.session_state.get("ml_access_token"):
+    st.subheader("Seus anúncios no Mercado Livre")
+
+    if st.button("Carregar meus anúncios", use_container_width=True):
+        try:
+            usuario_ml = st.session_state.get("ml_usuario", {})
+            user_id = usuario_ml.get("id")
+
+            anuncios_ml = listar_anuncios(
+                st.session_state["ml_access_token"],
+                user_id,
+                limite=20,
+            )
+
+            resultados = anuncios_ml.get("results", [])
+
+            if resultados:
+                st.success(f"{len(resultados)} anúncio(s) encontrado(s).")
+                for anuncio_id in resultados:
+                    st.write(anuncio_id)
+            else:
+                st.info("Nenhum anúncio encontrado nesta conta.")
+
+        except Exception as erro:
+            st.error(f"Não foi possível carregar os anúncios: {erro}")
