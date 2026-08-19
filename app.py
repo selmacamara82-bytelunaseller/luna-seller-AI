@@ -7,6 +7,7 @@ from pathlib import Path
 
 import streamlit as st
 from openai import OpenAI
+from mercado_livre import criar_estado, criar_url_autorizacao, trocar_codigo_por_token, consultar_usuario
 
 ARQUIVO_AUTOSAVE = Path("rascunho_autosalvo.json")
 st.set_page_config(page_title="Luna Seller AI", page_icon="🌙", layout="wide")
@@ -446,3 +447,59 @@ if st.session_state["rascunho_criado"]:
     with col_novo:
         st.button("Novo anúncio", on_click=iniciar_novo_anuncio, use_container_width=True)
 st.caption("Esta versão não publica no Mercado Livre. Revise tudo antes de usar.")
+
+st.divider()
+st.subheader("Mercado Livre")
+
+ML_CLIENT_ID = st.secrets.get("MERCADO_LIVRE_CLIENT_ID", "")
+ML_CLIENT_SECRET = st.secrets.get("MERCADO_LIVRE_CLIENT_SECRET", "")
+ML_REDIRECT_URI = "https://luna-seller-ai-4sy77wyfcelrvp8nfk4dme.streamlit.app/"
+
+if "ml_estado_oauth" not in st.session_state:
+    st.session_state["ml_estado_oauth"] = criar_estado()
+
+codigo_ml = st.query_params.get("code")
+estado_ml = st.query_params.get("state")
+
+if codigo_ml and "ml_access_token" not in st.session_state:
+    if estado_ml != st.session_state["ml_estado_oauth"]:
+        st.error("Não foi possível validar a conexão com o Mercado Livre.")
+    else:
+        try:
+            tokens = trocar_codigo_por_token(
+                ML_CLIENT_ID,
+                ML_CLIENT_SECRET,
+                ML_REDIRECT_URI,
+                codigo_ml,
+            )
+
+            st.session_state["ml_access_token"] = tokens.get("access_token", "")
+            st.session_state["ml_refresh_token"] = tokens.get("refresh_token", "")
+
+            usuario_ml = consultar_usuario(st.session_state["ml_access_token"])
+            st.session_state["ml_usuario"] = usuario_ml
+
+            st.query_params.clear()
+            st.success("Mercado Livre conectado com sucesso.")
+        except Exception as erro:
+            st.error(f"Não foi possível concluir a conexão: {erro}")
+
+if st.session_state.get("ml_access_token"):
+    usuario_ml = st.session_state.get("ml_usuario", {})
+    apelido_ml = usuario_ml.get("nickname", "Conta conectada")
+    st.success(f"✅ Mercado Livre conectado: {apelido_ml}")
+else:
+    if not ML_CLIENT_ID or not ML_CLIENT_SECRET:
+        st.warning("As credenciais do Mercado Livre ainda não estão configuradas.")
+    else:
+        url_autorizacao_ml = criar_url_autorizacao(
+            ML_CLIENT_ID,
+            ML_REDIRECT_URI,
+            st.session_state["ml_estado_oauth"],
+        )
+
+        st.link_button(
+            "Conectar ao Mercado Livre",
+            url_autorizacao_ml,
+            use_container_width=True,
+        )
