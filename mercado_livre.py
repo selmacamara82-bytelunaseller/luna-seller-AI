@@ -97,3 +97,14 @@ def listar_anuncios(access_token, user_id, limite=100):
 
     resposta.raise_for_status()
     return resposta.json()
+
+def consultar_anuncio(access_token, item_id):
+    """Consulta os detalhes de um anúncio do Mercado Livre."""
+    resposta = requests.get(
+        f"{URL_API}/items/{item_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=30,
+    )
+
+    resposta.raise_for_status()
+    return resposta.json()
