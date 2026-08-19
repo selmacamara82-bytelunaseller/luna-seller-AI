@@ -538,7 +538,7 @@ if st.session_state.get("ml_access_token"):
             anuncios_ml = listar_anuncios(
                 st.session_state["ml_access_token"],
                 user_id,
-                limite=20,
+                limite=100,
             )
 
             resultados = anuncios_ml.get("results", [])
