@@ -86,7 +86,7 @@ def consultar_usuario(access_token):
     return resposta.json()
 
 
-def listar_anuncios(access_token, user_id, limite=20):
+def listar_anuncios(access_token, user_id, limite=100):
     """Lista os anúncios da conta conectada no Mercado Livre."""
     resposta = requests.get(
         f"{URL_API}/users/{user_id}/items/search",
