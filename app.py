@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import base64
 import json
 import os
@@ -455,14 +457,35 @@ ML_CLIENT_ID = st.secrets.get("MERCADO_LIVRE_CLIENT_ID", "")
 ML_CLIENT_SECRET = st.secrets.get("MERCADO_LIVRE_CLIENT_SECRET", "")
 ML_REDIRECT_URI = "https://luna-seller-ai-4sy77wyfcelrvp8nfk4dme.streamlit.app/"
 
-if "ml_estado_oauth" not in st.session_state:
-    st.session_state["ml_estado_oauth"] = criar_estado()
+ml_nonce = criar_estado()
+ml_assinatura = hmac.new(
+    ML_CLIENT_SECRET.encode("utf-8"),
+    ml_nonce.encode("utf-8"),
+    hashlib.sha256,
+).hexdigest()
+
+ml_estado_oauth = f"{ml_nonce}.{ml_assinatura}"
 
 codigo_ml = st.query_params.get("code")
 estado_ml = st.query_params.get("state")
+estado_ml_valido = False
+
+if estado_ml and "." in estado_ml:
+    ml_nonce_recebido, ml_assinatura_recebida = estado_ml.rsplit(".", 1)
+
+    ml_assinatura_esperada = hmac.new(
+        ML_CLIENT_SECRET.encode("utf-8"),
+        ml_nonce_recebido.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+    estado_ml_valido = hmac.compare_digest(
+        ml_assinatura_recebida,
+        ml_assinatura_esperada,
+    )
 
 if codigo_ml and "ml_access_token" not in st.session_state:
-    if estado_ml != st.session_state["ml_estado_oauth"]:
+    if not estado_ml_valido:
         st.error("Não foi possível validar a conexão com o Mercado Livre.")
     else:
         try:
@@ -495,7 +518,7 @@ else:
         url_autorizacao_ml = criar_url_autorizacao(
             ML_CLIENT_ID,
             ML_REDIRECT_URI,
-            st.session_state["ml_estado_oauth"],
+            ml_estado_oauth,
         )
 
         st.link_button(
