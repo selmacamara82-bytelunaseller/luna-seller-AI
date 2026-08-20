@@ -545,8 +545,14 @@ if st.session_state.get("ml_access_token"):
 
             if resultados:
                 st.success(f"{len(resultados)} anúncio(s) encontrado(s).")
-                for anuncio_id in resultados:
-                    st.write(anuncio_id)
+            for anuncio_id in resultados:                     
+                detalhes = consultar_anuncio(
+                    st.session_state["ml_access_token"],
+                    anuncio_id,
+                )
+                titulo = detalhes.get("title", "Título não encontrado")
+                st.write(f"**{titulo}** — {anuncio_id}")
+                
             else:
                 st.info("Nenhum anúncio encontrado nesta conta.")
 
