@@ -551,9 +551,9 @@ if st.session_state.get("ml_access_token"):
                     st.session_state["ml_access_token"],
                     anuncio_id,
                 )
-                titulo = detalhes.get("title", "Título não encontrado")
-                lista_anuncios.append({"id": anuncio_id, "titulo": titulo})
-                st.write(f"**{titulo}** — {anuncio_id}")
+                 titulo = detalhes.get("title", "Título não encontrado")
+                 lista_anuncios.append({"id": anuncio_id, "titulo": titulo})
+                 st.write(f"**{titulo}** — {anuncio_id}")
             st.session_state["lista_anuncios"] = lista_anuncios    
             st.success("Lista de anúncios carregada e pronta para seleção.")
                 
