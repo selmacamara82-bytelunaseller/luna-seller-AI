@@ -563,3 +563,25 @@ if st.session_state.get("ml_access_token"):
 
         except Exception as erro:
             st.error(f"Não foi possível carregar os anúncios: {erro}")
+
+    lista_anuncios_salva = st.session_state.get("lista_anuncios", [])
+    if lista_anuncios_salva:
+        st.divider()
+        st.subheader("Selecionar anúncio")
+        opcoes_anuncios = {
+            f"{item.get('titulo', 'Título não encontrado')} — {item.get('id', '')}": item
+            for item in lista_anuncios_salva
+        }
+        rotulo_anuncio = st.selectbox(
+            "Escolha o anúncio que deseja trabalhar",
+            options=list(opcoes_anuncios.keys()),
+            key="ml_anuncio_para_selecionar",
+        )
+
+        if st.button("Selecionar anúncio", type="primary", use_container_width=True):
+            anuncio_selecionado = opcoes_anuncios[rotulo_anuncio]
+            st.session_state["anuncio_selecionado"] = anuncio_selecionado
+            st.success("Anúncio selecionado com sucesso.")
+            st.write(f"**Título:** {anuncio_selecionado.get('titulo', 'Título não encontrado')}")
+            st.write(f"**Código Mercado Livre:** {anuncio_selecionado.get('id', '')}")
+            st.info("Esta etapa apenas seleciona o anúncio. Nenhuma alteração foi enviada ao Mercado Livre.")
