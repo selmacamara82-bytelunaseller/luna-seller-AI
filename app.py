@@ -545,12 +545,14 @@ if st.session_state.get("ml_access_token"):
 
             if resultados:
                 st.success(f"{len(resultados)} anúncio(s) encontrado(s).")
+                lista_anuncios = []
             for anuncio_id in resultados:                     
                 detalhes = consultar_anuncio(
                     st.session_state["ml_access_token"],
                     anuncio_id,
                 )
                 titulo = detalhes.get("title", "Título não encontrado")
+                lista_anuncios.append({"id": anuncio_id, "titulo": titulo})
                 st.write(f"**{titulo}** — {anuncio_id}")
                 
             else:
