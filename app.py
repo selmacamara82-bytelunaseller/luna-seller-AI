@@ -585,3 +585,27 @@ if st.session_state.get("ml_access_token"):
             st.write(f"**Título:** {anuncio_selecionado.get('titulo', 'Título não encontrado')}")
             st.write(f"**Código Mercado Livre:** {anuncio_selecionado.get('id', '')}")
             st.info("Esta etapa apenas seleciona o anúncio. Nenhuma alteração foi enviada ao Mercado Livre.")
+
+        anuncio_atual = st.session_state.get("anuncio_selecionado")
+
+        if anuncio_atual:
+            st.divider()
+            st.subheader("Detalhes do anúncio selecionado")
+
+            try:
+                detalhes_selecionado = consultar_anuncio(
+                    st.session_state["ml_access_token"],
+                    anuncio_atual.get("id"),
+                )
+
+                st.write(f"**Título:** {detalhes_selecionado.get('title', 'Não informado')}")
+                st.write(f"**Preço:** R$ {detalhes_selecionado.get('price', 'Não informado')}")
+                st.write(f"**Quantidade disponível:** {detalhes_selecionado.get('available_quantity', 'Não informada')}")
+                st.write(f"**Quantidade vendida:** {detalhes_selecionado.get('sold_quantity', 'Não informada')}")
+                st.write(f"**Condição:** {detalhes_selecionado.get('condition', 'Não informada')}")
+                st.write(f"**Status:** {detalhes_selecionado.get('status', 'Não informado')}")
+
+                st.info("Consulta apenas para revisão. Nenhuma alteração foi enviada ao Mercado Livre.")
+
+            except Exception as erro:
+                st.error(f"Não foi possível carregar os detalhes do anúncio: {erro}")
