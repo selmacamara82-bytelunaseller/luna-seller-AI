@@ -98,11 +98,54 @@ def listar_anuncios(access_token, user_id, limite=100):
     resposta.raise_for_status()
     return resposta.json()
 
+
 def consultar_anuncio(access_token, item_id):
     """Consulta os detalhes de um anúncio do Mercado Livre."""
     resposta = requests.get(
         f"{URL_API}/items/{item_id}",
         headers={"Authorization": f"Bearer {access_token}"},
+        timeout=30,
+    )
+
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def atualizar_item(access_token, item_id, campos):
+    """Atualiza somente os campos informados de um anúncio existente."""
+    if not isinstance(campos, dict) or not campos:
+        raise ValueError("Nenhum campo foi informado para atualização.")
+
+    resposta = requests.put(
+        f"{URL_API}/items/{item_id}",
+        json=campos,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        timeout=30,
+    )
+
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def atualizar_descricao(access_token, item_id, descricao):
+    """Substitui a descrição existente do anúncio usando texto simples."""
+    texto = str(descricao or "").strip()
+    if not texto:
+        raise ValueError("A descrição não pode ficar vazia.")
+
+    resposta = requests.put(
+        f"{URL_API}/items/{item_id}/description",
+        params={"api_version": 2},
+        json={"plain_text": texto},
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
         timeout=30,
     )
 
