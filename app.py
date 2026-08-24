@@ -607,75 +607,75 @@ if st.session_state.get("ml_access_token"):
 
                 st.info("Consulta apenas para revisão. Nenhuma alteração foi enviada ao Mercado Livre.")
 
-                        st.divider()
-            st.subheader("Revisão do anúncio com IA")
+                st.divider()
+                st.subheader("Revisão do anúncio com IA")
 
-            atributos_ml = detalhes_selecionado.get("attributes", []) or []
+                atributos_ml = detalhes_selecionado.get("attributes", []) or []
 
-            def atributo_ml(nome):
-                for atributo in atributos_ml:
-                    if atributo.get("name", "").lower() == nome.lower():
-                        return atributo.get("value_name", "") or ""
-                return ""
+                def atributo_ml(nome):
+                    for atributo in atributos_ml:
+                        if atributo.get("name", "").lower() == nome.lower():
+                            return atributo.get("value_name", "") or ""
+                    return ""
 
-            dados_para_revisao = {
-                "nome": detalhes_selecionado.get("title", ""),
-                "categoria": detalhes_selecionado.get("category_id", ""),
-                "marca": atributo_ml("Marca"),
-                "modelo": atributo_ml("Modelo"),
-                "destaque": "",
-                "cor": atributo_ml("Cor"),
-                "material": atributo_ml("Material"),
-                "voltagem": atributo_ml("Voltagem"),
-                "dimensoes": "",
-                "garantia": "",
-                "conteudo_embalagem": "",
-                "resumo": "",
-                "diferenciais": "",
-                "instrucoes_ia": (
-                    "Analise este anúncio já existente do Mercado Livre e crie uma versão "
-                    "mais clara e profissional para revisão. Não invente informações."
-                ),
-            }
+                dados_para_revisao = {
+                    "nome": detalhes_selecionado.get("title", ""),
+                    "categoria": detalhes_selecionado.get("category_id", ""),
+                    "marca": atributo_ml("Marca"),
+                    "modelo": atributo_ml("Modelo"),
+                    "destaque": "",
+                    "cor": atributo_ml("Cor"),
+                    "material": atributo_ml("Material"),
+                    "voltagem": atributo_ml("Voltagem"),
+                    "dimensoes": "",
+                    "garantia": "",
+                    "conteudo_embalagem": "",
+                    "resumo": "",
+                    "diferenciais": "",
+                    "instrucoes_ia": (
+                        "Analise este anúncio já existente do Mercado Livre e crie uma versão "
+                        "mais clara e profissional para revisão. Não invente informações."
+                    ),
+                }
 
-            if st.button(
-                "Gerar revisão com IA",
-                type="primary",
-                use_container_width=True,
-                key=f"revisar_ml_{anuncio_atual.get('id')}",
-            ):
-                with st.spinner("Analisando o anúncio..."):
-                    st.session_state["revisao_ml"] = {
-                        "id": anuncio_atual.get("id"),
-                        "titulo": gerar_titulo(dados_para_revisao),
-                        "descricao": gerar_descricao(dados_para_revisao),
-                        "palavras": gerar_palavras_chave(dados_para_revisao),
-                    }
+                if st.button(
+                    "Gerar revisão com IA",
+                    type="primary",
+                    use_container_width=True,
+                    key=f"revisar_ml_{anuncio_atual.get('id')}",
+                ):
+                    with st.spinner("Analisando o anúncio..."):
+                        st.session_state["revisao_ml"] = {
+                            "id": anuncio_atual.get("id"),
+                            "titulo": gerar_titulo(dados_para_revisao),
+                            "descricao": gerar_descricao(dados_para_revisao),
+                            "palavras": gerar_palavras_chave(dados_para_revisao),
+                        }
 
-            revisao_ml = st.session_state.get("revisao_ml")
+                revisao_ml = st.session_state.get("revisao_ml")
 
-            if revisao_ml and revisao_ml.get("id") == anuncio_atual.get("id"):
-                st.success("Revisão criada. Nada foi alterado no Mercado Livre.")
+                if revisao_ml and revisao_ml.get("id") == anuncio_atual.get("id"):
+                    st.success("Revisão criada. Nada foi alterado no Mercado Livre.")
 
-                st.write("**Título sugerido:**")
-                st.write(revisao_ml.get("titulo", ""))
+                    st.write("**Título sugerido:**")
+                    st.write(revisao_ml.get("titulo", ""))
 
-                st.write("**Descrição sugerida:**")
-                st.text_area(
-                    "Descrição para revisão",
-                    value=revisao_ml.get("descricao", ""),
-                    height=350,
-                    disabled=True,
-                    key=f"descricao_revisao_{anuncio_atual.get('id')}",
-                )
+                    st.write("**Descrição sugerida:**")
+                    st.text_area(
+                        "Descrição para revisão",
+                        value=revisao_ml.get("descricao", ""),
+                        height=350,
+                        disabled=True,
+                        key=f"descricao_revisao_{anuncio_atual.get('id')}",
+                    )
 
-                st.write("**Palavras-chave sugeridas:**")
-                st.write(", ".join(revisao_ml.get("palavras", [])))
+                    st.write("**Palavras-chave sugeridas:**")
+                    st.write(", ".join(revisao_ml.get("palavras", [])))
 
-                st.info(
-                    "Modo seguro: esta revisão é apenas uma sugestão. "
-                    "Nenhuma alteração foi enviada ao Mercado Livre."
-                )
+                    st.info(
+                        "Modo seguro: esta revisão é apenas uma sugestão. "
+                        "Nenhuma alteração foi enviada ao Mercado Livre."
+                    )
 
             except Exception as erro:
                 st.error(f"Não foi possível carregar os detalhes do anúncio: {erro}")
