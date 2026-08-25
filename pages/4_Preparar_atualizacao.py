@@ -107,14 +107,33 @@ else:
     alterar_titulo = st.checkbox("Atualizar também o título aprovado", value=False)
 
 alterar_descricao = st.checkbox("Atualizar a descrição aprovada", value=False)
-confirmacao = st.checkbox("Conferi o anúncio e autorizo a atualização selecionada no Mercado Livre.")
+
+st.subheader("Resumo final antes do envio")
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Anúncio", anuncio_id)
+with col2:
+    st.metric("Itens selecionados", int(bool(alterar_titulo)) + int(bool(alterar_descricao)))
+
+st.write(f"**Título:** {'SERÁ ALTERADO' if alterar_titulo else 'não será alterado'}")
+st.write(f"**Descrição:** {'SERÁ ALTERADA' if alterar_descricao else 'não será alterada'}")
+
+if alterar_titulo:
+    st.caption(f"Novo título: {titulo_aprovado}")
+if alterar_descricao:
+    st.caption(f"Descrição aprovada: {len(descricao_aprovada)} caracteres")
+
+if not (alterar_titulo or alterar_descricao):
+    st.info("Selecione acima pelo menos uma alteração para continuar.")
+
+confirmacao = st.checkbox("Conferi o resumo acima e autorizo a atualização selecionada no Mercado Livre.")
 palavra = st.text_input("Para confirmar, digite ATUALIZAR", value="", placeholder="ATUALIZAR")
 
 ha_alteracao = alterar_titulo or alterar_descricao
 confirmacao_valida = confirmacao and palavra.strip().upper() == "ATUALIZAR"
 
 if st.button(
-    "Enviar atualização confirmada",
+    "Confirmar e atualizar no Mercado Livre",
     type="primary",
     use_container_width=True,
     disabled=not (ha_alteracao and confirmacao_valida),
