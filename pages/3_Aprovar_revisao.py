@@ -55,17 +55,29 @@ palavras_texto = st.text_area(
 st.divider()
 
 if st.button("Aprovar revisão", type="primary", use_container_width=True):
-    palavras = [p.strip() for p in palavras_texto.split(",") if p.strip()]
-    versao_aprovada = {
-        "id": anuncio_id,
-        "titulo": titulo.strip(),
-        "descricao": descricao.strip(),
-        "palavras": palavras,
-        "status": "aprovado_para_revisao_manual",
-    }
-    st.session_state["revisao_aprovada"] = versao_aprovada
-    st.success("Revisão aprovada e guardada no Luna Seller nesta sessão.")
-    st.info("Nenhuma alteração foi enviada ao Mercado Livre.")
+    titulo_final = str(st.session_state.get("revisao_titulo_edit", titulo) or "").strip()
+    descricao_final = str(st.session_state.get("revisao_descricao_edit", descricao) or "").strip()
+    palavras_finais_texto = str(st.session_state.get("revisao_palavras_edit", palavras_texto) or "")
+    palavras = [p.strip() for p in palavras_finais_texto.split(",") if p.strip()]
+
+    if not titulo_final:
+        st.error("O título está vazio. Confira antes de aprovar.")
+    elif not descricao_final:
+        st.error("A descrição está vazia. Confira antes de aprovar.")
+    else:
+        versao_aprovada = {
+            "id": anuncio_id,
+            "titulo": titulo_final,
+            "descricao": descricao_final,
+            "palavras": palavras,
+            "status": "aprovado_para_revisao_manual",
+        }
+        st.session_state["revisao_aprovada"] = versao_aprovada
+        st.session_state["revisao_aprovada_titulo"] = titulo_final
+        st.session_state["revisao_aprovada_descricao"] = descricao_final
+        st.session_state["revisao_aprovada_palavras"] = palavras
+        st.success("Revisão aprovada e guardada no Luna Seller nesta sessão.")
+        st.info("Nenhuma alteração foi enviada ao Mercado Livre.")
 
 aprovada = st.session_state.get("revisao_aprovada")
 if aprovada and aprovada.get("id") == anuncio_id:
