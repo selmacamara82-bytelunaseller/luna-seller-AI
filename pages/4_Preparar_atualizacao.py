@@ -17,9 +17,13 @@ if not aprovada:
 
 anuncio_id = aprovada.get("id") or anuncio.get("id", "")
 
-titulo_aprovado = str(aprovada.get("titulo", "") or "").strip()
-descricao_aprovada = str(aprovada.get("descricao", "") or "").strip()
-palavras_aprovadas = aprovada.get("palavras", [])
+titulo_aprovado = str(
+    aprovada.get("titulo") or st.session_state.get("revisao_aprovada_titulo", "") or ""
+).strip()
+descricao_aprovada = str(
+    aprovada.get("descricao") or st.session_state.get("revisao_aprovada_descricao", "") or ""
+).strip()
+palavras_aprovadas = aprovada.get("palavras") or st.session_state.get("revisao_aprovada_palavras", []) or []
 
 st.success("Versão aprovada carregada com sucesso.")
 
@@ -28,7 +32,7 @@ if anuncio_id:
 
 st.subheader("Conteúdo aprovado")
 st.write("**Título aprovado:**")
-st.write(titulo_aprovado)
+st.write(titulo_aprovado or "—")
 
 st.write("**Descrição aprovada:**")
 st.text_area(
@@ -42,6 +46,12 @@ st.text_area(
 st.write("**Palavras-chave aprovadas:**")
 st.write(", ".join(palavras_aprovadas))
 
+conteudo_pronto = bool(titulo_aprovado and descricao_aprovada)
+if conteudo_pronto:
+    st.success(f"Conteúdo conferido: descrição carregada ({len(descricao_aprovada)} caracteres).")
+else:
+    st.error("A versão aprovada está incompleta. O envio ao Mercado Livre foi bloqueado. Volte em 'Aprovar revisão' e aprove novamente.")
+
 st.divider()
 st.subheader("Plano de atualização")
 
@@ -50,7 +60,7 @@ plano = {
     "titulo": titulo_aprovado,
     "descricao": descricao_aprovada,
     "palavras": palavras_aprovadas,
-    "status": "pronto_para_conferencia_manual",
+    "status": "pronto_para_conferencia_manual" if conteudo_pronto else "bloqueado_conteudo_incompleto",
     "enviar_ao_mercado_livre": False,
 }
 
@@ -69,6 +79,10 @@ st.download_button(
 st.divider()
 st.subheader("Enviar atualização ao Mercado Livre")
 st.warning("Esta área pode alterar o anúncio real. Nada será enviado sem sua confirmação abaixo.")
+
+if not conteudo_pronto:
+    st.info("Envio desativado até que título e descrição aprovados estejam carregados corretamente.")
+    st.stop()
 
 access_token = st.session_state.get("ml_access_token", "")
 
@@ -109,14 +123,10 @@ if st.button(
         resultados = []
 
         if alterar_titulo:
-            if not titulo_aprovado:
-                raise ValueError("O título aprovado está vazio.")
             atualizar_item(access_token, anuncio_id, {"title": titulo_aprovado})
             resultados.append("título")
 
         if alterar_descricao:
-            if not descricao_aprovada:
-                raise ValueError("A descrição aprovada está vazia.")
             atualizar_descricao(access_token, anuncio_id, descricao_aprovada)
             resultados.append("descrição")
 
