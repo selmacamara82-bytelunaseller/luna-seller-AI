@@ -18,23 +18,37 @@ fotos = st.file_uploader(
     "Escolha uma ou mais fotos do produto",
     type=["jpg", "jpeg", "png", "webp"],
     accept_multiple_files=True,
-    help="Nesta primeira etapa, as fotos ficam apenas para conferência no Luna Seller e não são enviadas ao Mercado Livre.",
+    help="Nesta etapa, as fotos ficam apenas para conferência no Luna Seller e não são enviadas ao Mercado Livre.",
 )
 
 if fotos:
     st.success(f"{len(fotos)} foto(s) carregada(s) para conferência.")
-    st.caption("Você poderá revisar cada imagem antes de qualquer envio futuro ao anúncio.")
 
+    nomes_fotos = [foto.name for foto in fotos]
+    st.subheader("Foto principal")
+    principal_nome = st.selectbox(
+        "Escolha qual foto será a principal",
+        options=nomes_fotos,
+        index=0,
+        help="Esta escolha fica apenas no Luna Seller nesta etapa. Nada é enviado ao Mercado Livre.",
+    )
+
+    st.session_state["foto_principal_nome"] = principal_nome
+    st.info(f"Foto principal selecionada: {principal_nome}")
+
+    st.subheader("Conferência das fotos")
     colunas = st.columns(3)
     for indice, foto in enumerate(fotos):
         with colunas[indice % 3]:
-            st.image(foto, caption=f"Foto {indice + 1}: {foto.name}", use_container_width=True)
+            legenda = f"Foto {indice + 1}: {foto.name}"
+            if foto.name == principal_nome:
+                legenda += " — PRINCIPAL"
+            st.image(foto, caption=legenda, use_container_width=True)
 else:
     st.info("Clique em 'Browse files' para escolher fotos do seu computador.")
 
 st.divider()
 st.subheader("Próximas funções desta área")
-st.write("• Escolher a foto principal do anúncio")
 st.write("• Organizar a ordem das fotos")
 st.write("• Conferir as imagens antes do envio")
 st.write("• Preparar imagens profissionais para o produto")
