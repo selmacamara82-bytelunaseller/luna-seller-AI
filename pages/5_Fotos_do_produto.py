@@ -1,57 +1,121 @@
 import streamlit as st
 
-st.set_page_config(page_title="Fotos do produto | Luna Seller", page_icon="🌙", layout="wide")
+st.set_page_config(
+    page_title="Revisar fotos | Luna Seller",
+    page_icon="🌙",
+    layout="wide"
+)
 
-st.title("🌙 Fotos do produto")
-st.caption("Organize e confira as imagens do anúncio dentro do Luna Seller antes de qualquer envio ao Mercado Livre.")
+st.title("🌙 Revisar fotos do produto")
+st.caption(
+    "Confira as imagens preparadas para o anúncio antes do envio ao Mercado Livre."
+)
 
 anuncio = st.session_state.get("anuncio_selecionado", {})
 anuncio_id = anuncio.get("id", "")
 
 if anuncio_id:
     st.info(f"Anúncio selecionado: {anuncio_id}")
-else:
-    st.warning("Nenhum anúncio está selecionado nesta sessão. Você ainda pode testar o envio de fotos abaixo.")
 
-st.subheader("Adicionar fotos")
-fotos = st.file_uploader(
-    "Escolha uma ou mais fotos do produto",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=True,
-    help="Nesta etapa, as fotos ficam apenas para conferência no Luna Seller e não são enviadas ao Mercado Livre.",
+st.subheader("📸 Imagens preparadas")
+
+st.write(
+    "Nesta etapa, as imagens do produto já deverão estar preparadas pelo "
+    "Luna Seller para sua revisão."
 )
 
-if fotos:
-    st.success(f"{len(fotos)} foto(s) carregada(s) para conferência.")
+if "fotos_preparadas" not in st.session_state:
+    st.session_state["fotos_preparadas"] = []
 
-    nomes_fotos = [foto.name for foto in fotos]
-    st.subheader("Foto principal")
-    principal_nome = st.selectbox(
-        "Escolha qual foto será a principal",
-        options=nomes_fotos,
-        index=0,
-        help="Esta escolha fica apenas no Luna Seller nesta etapa. Nada é enviado ao Mercado Livre.",
+fotos_preparadas = st.session_state["fotos_preparadas"]
+
+with st.expander("🧪 Adicionar imagens manualmente para teste"):
+    fotos_teste = st.file_uploader(
+        "Escolha uma ou mais imagens",
+        type=["jpg", "jpeg", "png", "webp"],
+        accept_multiple_files=True,
+        help="Esta opção é temporária e serve apenas para testar a área de revisão."
     )
 
-    st.session_state["foto_principal_nome"] = principal_nome
-    st.info(f"Foto principal selecionada: {principal_nome}")
+    if fotos_teste:
+        st.session_state["fotos_preparadas"] = fotos_teste
+        fotos_preparadas = fotos_teste
 
-    st.subheader("Conferência das fotos")
-    colunas = st.columns(3)
-    for indice, foto in enumerate(fotos):
-        with colunas[indice % 3]:
-            legenda = f"Foto {indice + 1}: {foto.name}"
-            if foto.name == principal_nome:
-                legenda += " — PRINCIPAL"
-            st.image(foto, caption=legenda, use_container_width=True)
-else:
-    st.info("Clique em 'Browse files' para escolher fotos do seu computador.")
+if not fotos_preparadas:
+    st.warning(
+        "Ainda não há imagens preparadas nesta sessão. "
+        "No fluxo final, a IA do Luna Seller preparará as imagens "
+        "antes de chegar a esta etapa."
+    )
+
+    st.info(
+        "Enquanto estamos construindo essa função, abra a área de teste acima "
+        "para carregar imagens e conferir como ficará a revisão."
+    )
+
+    st.stop()
+
+st.success(
+    f"{len(fotos_preparadas)} imagem(ns) pronta(s) para revisão."
+)
 
 st.divider()
-st.subheader("Próximas funções desta área")
-st.write("• Organizar a ordem das fotos")
-st.write("• Conferir as imagens antes do envio")
-st.write("• Preparar imagens profissionais para o produto")
-st.write("• Adicionar o envio seguro das fotos ao Mercado Livre somente com sua confirmação")
 
-st.warning("Modo seguro: nenhuma foto desta página é enviada automaticamente ao Mercado Livre.")
+st.subheader("⭐ Escolher foto principal")
+
+nomes_fotos = [
+    getattr(foto, "name", f"Foto {i + 1}")
+    for i, foto in enumerate(fotos_preparadas)
+]
+
+foto_principal = st.selectbox(
+    "Selecione a imagem que será a capa do anúncio",
+    options=range(len(fotos_preparadas)),
+    format_func=lambda i: nomes_fotos[i]
+)
+
+st.session_state["foto_principal_indice"] = foto_principal
+
+st.info(
+    f"Foto principal selecionada: {nomes_fotos[foto_principal]}"
+)
+
+st.divider()
+
+st.subheader("🖼️ Conferência das imagens")
+
+for i, foto in enumerate(fotos_preparadas):
+    st.markdown(f"### Foto {i + 1}")
+
+    st.image(
+        foto,
+        caption=nomes_fotos[i],
+        width=420
+    )
+
+    if i == foto_principal:
+        st.success("⭐ Esta será a foto principal do anúncio.")
+
+    st.divider()
+
+st.subheader("🤖 Próxima etapa da IA")
+
+st.write(
+    "Quando conectarmos a geração automática, o Luna Seller poderá usar "
+    "a foto original do produto para preparar versões profissionais, "
+    "como capa em fundo branco, benefícios, detalhes e imagem de uso."
+)
+
+st.warning(
+    "Nenhuma imagem desta página é enviada automaticamente ao Mercado Livre."
+)
+
+confirmar_fotos = st.checkbox(
+    "Conferi as imagens e aprovo este conjunto de fotos."
+)
+
+if confirmar_fotos:
+    st.session_state["fotos_aprovadas"] = True
+    st.success("Fotos aprovadas para a próxima etapa.")
+else:
+    st.session_state["fotos_aprovadas"] = False
