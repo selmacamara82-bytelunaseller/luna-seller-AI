@@ -37,6 +37,21 @@ st.write("Reúne informações úteis confirmadas no anúncio, sem inventar medi
 st.divider()
 st.subheader("🖼️ Imagens preparadas para revisão")
 
+# A foto enviada no início do anúncio já fica no session_state do Streamlit.
+# Procuramos o uploader ativo para reaproveitar a mesma imagem sem pedir novo envio.
+foto_original = None
+for chave, valor in st.session_state.items():
+    if str(chave).startswith("foto_produto_") and valor is not None:
+        foto_original = valor
+
+if foto_original is not None:
+    st.success("✅ Foto original do anúncio encontrada automaticamente.")
+    st.caption("Você não precisa carregar novamente a foto que colocou no início do anúncio.")
+    with st.expander("Ver foto original"):
+        st.image(foto_original, caption="Foto original do produto", width=420)
+else:
+    st.info("A foto original ainda não foi encontrada nesta sessão. Para anúncio novo, envie a foto na tela inicial do Luna Seller.")
+
 if "fotos_preparadas" not in st.session_state:
     st.session_state["fotos_preparadas"] = []
 
@@ -54,8 +69,11 @@ with st.expander("🧪 Adicionar imagens manualmente para teste"):
         fotos_preparadas = fotos_teste
 
 if not fotos_preparadas:
-    st.warning("Ainda não há imagens preparadas nesta sessão.")
-    st.info("No fluxo final, a foto original será fornecida no início do anúncio e a IA preparará o conjunto antes desta etapa de revisão.")
+    st.warning("Ainda não há imagens profissionais preparadas nesta sessão.")
+    if foto_original is not None:
+        st.info("A foto original já está vinculada ao anúncio. A próxima etapa será usar essa foto como referência para a IA preparar as imagens profissionais.")
+    else:
+        st.info("No fluxo final, a foto original será fornecida no início do anúncio e a IA preparará o conjunto antes desta etapa de revisão.")
     st.stop()
 
 st.success(f"{len(fotos_preparadas)} imagem(ns) pronta(s) para revisão.")
