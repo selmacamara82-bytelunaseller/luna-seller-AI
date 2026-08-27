@@ -37,20 +37,27 @@ st.write("Reúne informações úteis confirmadas no anúncio, sem inventar medi
 st.divider()
 st.subheader("🖼️ Imagens preparadas para revisão")
 
-# A foto enviada no início do anúncio já fica no session_state do Streamlit.
-# Procuramos o uploader ativo para reaproveitar a mesma imagem sem pedir novo envio.
+# A tela Modo Vendedora salva uma cópia estável da foto em bytes.
+# Assim ela continua disponível mesmo quando o usuário troca de página.
 foto_original = None
-for chave, valor in st.session_state.items():
-    if str(chave).startswith("foto_produto_") and valor is not None:
-        foto_original = valor
+foto_salva = st.session_state.get("foto_original_anuncio")
+
+if isinstance(foto_salva, dict) and foto_salva.get("bytes"):
+    foto_original = foto_salva["bytes"]
+else:
+    # Compatibilidade temporária com o fluxo antigo.
+    for chave, valor in st.session_state.items():
+        if str(chave).startswith("foto_produto_") and valor is not None:
+            foto_original = valor
+            break
 
 if foto_original is not None:
     st.success("✅ Foto original do anúncio encontrada automaticamente.")
-    st.caption("Você não precisa carregar novamente a foto que colocou no início do anúncio.")
+    st.caption("Você não precisa carregar novamente a foto que colocou no Modo Vendedora.")
     with st.expander("Ver foto original"):
         st.image(foto_original, caption="Foto original do produto", width=420)
 else:
-    st.info("A foto original ainda não foi encontrada nesta sessão. Para anúncio novo, envie a foto na tela inicial do Luna Seller.")
+    st.info("A foto original ainda não foi encontrada nesta sessão. Envie a foto no Modo Vendedora para iniciar um anúncio novo.")
 
 if "fotos_preparadas" not in st.session_state:
     st.session_state["fotos_preparadas"] = []
