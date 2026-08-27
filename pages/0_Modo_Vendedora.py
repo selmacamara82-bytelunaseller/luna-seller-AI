@@ -40,11 +40,16 @@ Analise cuidadosamente a foto do produto e crie um rascunho profissional.
 Sugestão opcional da vendedora: {pedido}
 
 REGRAS IMPORTANTES:
-- Não invente marca, modelo, medidas, voltagem, certificação, quantidade, material ou acessórios que não estejam visíveis ou confirmados.
+- Não invente marca, modelo, capacidade, medidas, voltagem, certificação, quantidade, material ou acessórios que não estejam visíveis ou confirmados.
 - Se uma informação não puder ser confirmada pela imagem, deixe o campo correspondente vazio.
-- O título deve ter no máximo 60 caracteres, ser natural e próprio para busca.
+- O título deve ter no máximo 60 caracteres e ser forte para busca no Mercado Livre.
+- No título, comece pelo nome exato do produto e depois use os atributos de maior intenção de compra que estejam confirmados, como capacidade, material, tamanho, quantidade, modelo ou função.
+- Aproveite bem o limite de 60 caracteres quando houver dados confirmados; evite títulos curtos e genéricos.
+- Não repita palavras ou sinônimos só para preencher espaço e não use termos como promoção, oferta, melhor ou imperdível.
+- Nunca coloque no título um dado apenas provável. Se a capacidade, marca ou modelo não estiverem confirmados, omita-os.
 - A descrição deve ser clara, profissional e em português do Brasil.
-- Não use alegações promocionais falsas.
+- Não afirme compatibilidade com lava-louças, ausência de BPA, certificações ou grau específico de material sem confirmação explícita.
+- Em dados_para_confirmar, inclua somente informações essenciais para vender corretamente que realmente façam falta, como capacidade, voltagem, quantidade, marca/modelo quando aplicável ou medidas quando forem relevantes. Não peça certificações ou características opcionais sem necessidade.
 - Gere palavras-chave úteis para pesquisa.
 
 Retorne SOMENTE JSON válido neste formato:
