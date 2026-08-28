@@ -23,7 +23,7 @@ st.subheader("📸 Padrão de imagens do Luna Seller")
 st.write("O conjunto padrão terá até 5 imagens profissionais para revisão:")
 
 st.markdown("**1. Foto principal — capa do anúncio**")
-st.write("Produto bem destacado, fundo branco e limpo, sem textos, selos, bordas ou objetos decorativos.")
+st.write("Produto grande em destaque sobre fundo branco, com até 3 círculos laterais mostrando detalhes reais ou formas de uso quando isso puder ser feito com segurança.")
 st.caption("A IA deve preservar fielmente formato, cor, quantidade de peças e características visuais do produto original.")
 
 st.markdown("**2. Foto de detalhes do produto**")
@@ -65,8 +65,8 @@ if "fotos_preparadas" not in st.session_state:
 
 st.divider()
 st.subheader("✨ Criar foto principal profissional")
-st.write("O Luna Seller usa a foto original como referência e prepara a capa do anúncio.")
-st.caption("Fundo branco, produto em destaque, sem textos e sem inventar características.")
+st.write("Padrão escolhido: produto grande em destaque + detalhes laterais em círculos.")
+st.caption("Fundo branco, sem textos e sem inventar características do produto.")
 
 if foto_original is not None:
     if st.button("✨ Gerar foto principal", type="primary", use_container_width=True):
@@ -83,16 +83,20 @@ if foto_original is not None:
                 arquivo = io.BytesIO(foto_original)
                 arquivo.name = nome
 
-                with st.spinner("Preparando a foto principal profissional..."):
+                with st.spinner("Preparando a foto principal no padrão Luna Seller..."):
                     resultado = client.images.edit(
                         model="gpt-image-1.5",
                         image=arquivo,
                         prompt=(
-                            "Crie uma foto principal profissional para anúncio de marketplace usando exatamente o produto da imagem de referência. "
-                            "Preserve fielmente o formato, proporções, cor, acabamento, peças, tampa, acessórios e todos os detalhes visuais reais do produto. "
-                            "Não invente, remova ou altere componentes. Não adicione marca, logotipo, texto, selo, borda, medidas, objetos decorativos ou acessórios novos. "
-                            "Use fundo branco puro e limpo, iluminação de estúdio realista, produto centralizado, inteiro, nítido e bem destacado, com sombra suave e natural. "
-                            "A imagem deve parecer uma fotografia comercial profissional e adequada para capa de anúncio no Mercado Livre."
+                            "Crie uma imagem quadrada profissional de catálogo para marketplace, usando SOMENTE o produto real da imagem de referência. "
+                            "O layout deve seguir este padrão visual fixo: fundo branco puro; o produto principal deve ocupar aproximadamente 65 a 75 por cento da área, grande, nítido e bem destacado no lado esquerdo ou centro-esquerda; no lado direito, crie até três círculos verticais com borda fina escura mostrando detalhes REAIS do próprio produto, seus componentes que já aparecem na referência ou formas de uso óbvias e seguras. "
+                            "Os círculos são imagens complementares, não são produtos adicionais incluídos na venda. "
+                            "Preserve com máxima fidelidade o formato, proporções, cor, acabamento, quantidade de peças, tampa, acessórios e detalhes visuais presentes na fotografia original. "
+                            "Não redesenhe o produto. Não troque peças. Não altere o formato da tampa. Não crie acessórios, funções, alimentos, líquidos, medidas, capacidade, marca, logotipo ou características que não estejam confirmadas pela imagem. "
+                            "Se não houver informação visual suficiente para criar uma cena de uso com segurança, use nos círculos apenas recortes ampliados de detalhes reais da própria imagem, como tampa, abertura, acabamento, encaixe ou componente visível. "
+                            "Não coloque texto, palavras, números, selos promocionais, ícones de benefícios ou marcas na imagem. "
+                            "Use iluminação comercial de estúdio, sombras suaves, alta nitidez, composição limpa e aparência de fotografia profissional de e-commerce. "
+                            "A prioridade absoluta é manter o produto reconhecível e fiel à referência; o estilo do layout nunca deve justificar inventar ou modificar o produto."
                         ),
                         size="1024x1024",
                         quality="medium",
@@ -103,7 +107,7 @@ if foto_original is not None:
                 imagem_bytes = base64.b64decode(imagem_b64)
                 st.session_state["foto_principal_ia"] = imagem_bytes
                 st.session_state["fotos_preparadas"] = [imagem_bytes]
-                st.success("✅ Foto principal criada. Confira o resultado abaixo antes de aprovar.")
+                st.success("✅ Foto principal criada no novo padrão. Confira antes de aprovar.")
         except Exception as erro:
             st.error(f"Não foi possível gerar a foto agora: {erro}")
 else:
@@ -152,7 +156,7 @@ foto_principal = st.selectbox(
 )
 st.session_state["foto_principal_indice"] = foto_principal
 st.info(f"Foto principal selecionada: {nomes_fotos[foto_principal]}")
-st.caption("Regra da capa: fundo branco, produto em destaque e nenhuma escrita sobre a imagem.")
+st.caption("Padrão da capa: fundo branco, produto grande em destaque e detalhes laterais fiéis ao produto.")
 
 st.divider()
 st.subheader("🔎 Conferência das imagens")
