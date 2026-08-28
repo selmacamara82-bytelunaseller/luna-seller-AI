@@ -1,4 +1,8 @@
+import base64
+import io
+
 import streamlit as st
+from openai import OpenAI
 
 st.set_page_config(
     page_title="Revisar fotos | Luna Seller",
@@ -37,18 +41,15 @@ st.write("Reúne informações úteis confirmadas no anúncio, sem inventar medi
 st.divider()
 st.subheader("🖼️ Imagens preparadas para revisão")
 
-# A tela Modo Vendedora salva uma cópia estável da foto em bytes.
-# Assim ela continua disponível mesmo quando o usuário troca de página.
 foto_original = None
 foto_salva = st.session_state.get("foto_original_anuncio")
 
 if isinstance(foto_salva, dict) and foto_salva.get("bytes"):
     foto_original = foto_salva["bytes"]
 else:
-    # Compatibilidade temporária com o fluxo antigo.
     for chave, valor in st.session_state.items():
         if str(chave).startswith("foto_produto_") and valor is not None:
-            foto_original = valor
+            foto_original = valor.getvalue() if hasattr(valor, "getvalue") else valor
             break
 
 if foto_original is not None:
@@ -62,7 +63,58 @@ else:
 if "fotos_preparadas" not in st.session_state:
     st.session_state["fotos_preparadas"] = []
 
+st.divider()
+st.subheader("✨ Criar foto principal profissional")
+st.write("O Luna Seller usa a foto original como referência e prepara a capa do anúncio.")
+st.caption("Fundo branco, produto em destaque, sem textos e sem inventar características.")
+
+if foto_original is not None:
+    if st.button("✨ Gerar foto principal", type="primary", use_container_width=True):
+        try:
+            api_key = st.secrets.get("OPENAI_API_KEY")
+            if not api_key:
+                st.error("A chave da OpenAI não foi encontrada nas configurações do aplicativo.")
+            else:
+                client = OpenAI(api_key=api_key)
+                nome = "produto.jpg"
+                if isinstance(foto_salva, dict):
+                    nome = foto_salva.get("nome") or nome
+
+                arquivo = io.BytesIO(foto_original)
+                arquivo.name = nome
+
+                with st.spinner("Preparando a foto principal profissional..."):
+                    resultado = client.images.edit(
+                        model="gpt-image-1.5",
+                        image=arquivo,
+                        prompt=(
+                            "Crie uma foto principal profissional para anúncio de marketplace usando exatamente o produto da imagem de referência. "
+                            "Preserve fielmente o formato, proporções, cor, acabamento, peças, tampa, acessórios e todos os detalhes visuais reais do produto. "
+                            "Não invente, remova ou altere componentes. Não adicione marca, logotipo, texto, selo, borda, medidas, objetos decorativos ou acessórios novos. "
+                            "Use fundo branco puro e limpo, iluminação de estúdio realista, produto centralizado, inteiro, nítido e bem destacado, com sombra suave e natural. "
+                            "A imagem deve parecer uma fotografia comercial profissional e adequada para capa de anúncio no Mercado Livre."
+                        ),
+                        size="1024x1024",
+                        quality="medium",
+                        input_fidelity="high",
+                    )
+
+                imagem_b64 = resultado.data[0].b64_json
+                imagem_bytes = base64.b64decode(imagem_b64)
+                st.session_state["foto_principal_ia"] = imagem_bytes
+                st.session_state["fotos_preparadas"] = [imagem_bytes]
+                st.success("✅ Foto principal criada. Confira o resultado abaixo antes de aprovar.")
+        except Exception as erro:
+            st.error(f"Não foi possível gerar a foto agora: {erro}")
+else:
+    st.warning("Envie primeiro uma foto no Modo Vendedora.")
+
 fotos_preparadas = st.session_state["fotos_preparadas"]
+
+if st.session_state.get("foto_principal_ia"):
+    st.markdown("### ⭐ Foto principal gerada pela IA")
+    st.image(st.session_state["foto_principal_ia"], caption="Foto principal profissional", width=520)
+    st.caption("Confira se o produto permaneceu fiel ao original. Nada será enviado ao Mercado Livre sem sua aprovação.")
 
 with st.expander("🧪 Adicionar imagens manualmente para teste"):
     fotos_teste = st.file_uploader(
@@ -78,14 +130,17 @@ with st.expander("🧪 Adicionar imagens manualmente para teste"):
 if not fotos_preparadas:
     st.warning("Ainda não há imagens profissionais preparadas nesta sessão.")
     if foto_original is not None:
-        st.info("A foto original já está vinculada ao anúncio. A próxima etapa será usar essa foto como referência para a IA preparar as imagens profissionais.")
-    else:
-        st.info("No fluxo final, a foto original será fornecida no início do anúncio e a IA preparará o conjunto antes desta etapa de revisão.")
+        st.info("A foto original já está vinculada. Clique em Gerar foto principal para preparar a primeira imagem profissional.")
     st.stop()
 
 st.success(f"{len(fotos_preparadas)} imagem(ns) pronta(s) para revisão.")
 
-nomes_fotos = [getattr(foto, "name", f"Foto {i + 1}") for i, foto in enumerate(fotos_preparadas)]
+nomes_fotos = []
+for i, foto in enumerate(fotos_preparadas):
+    if isinstance(foto, (bytes, bytearray)):
+        nomes_fotos.append("Foto principal profissional" if i == 0 else f"Foto {i + 1}")
+    else:
+        nomes_fotos.append(getattr(foto, "name", f"Foto {i + 1}"))
 
 st.divider()
 st.subheader("⭐ Foto principal")
@@ -103,8 +158,8 @@ st.divider()
 st.subheader("🔎 Conferência das imagens")
 
 for i, foto in enumerate(fotos_preparadas):
-    tipo = ["Foto principal", "Detalhes", "Benefícios", "Produto em uso", "Informativa"]
-    titulo_tipo = tipo[i] if i < len(tipo) else "Imagem adicional"
+    tipos = ["Foto principal", "Detalhes", "Benefícios", "Produto em uso", "Informativa"]
+    titulo_tipo = tipos[i] if i < len(tipos) else "Imagem adicional"
     st.markdown(f"### {i + 1}. {titulo_tipo}")
     st.image(foto, caption=nomes_fotos[i], width=420)
     if i == foto_principal:
