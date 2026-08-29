@@ -8,31 +8,11 @@ st.set_page_config(page_title="Revisar fotos | Luna Seller", page_icon="🌙", l
 st.title("🌙 Revisar fotos do produto")
 st.caption("Confira as imagens preparadas para o anúncio antes do envio ao Mercado Livre.")
 
-anuncio = st.session_state.get("anuncio_selecionado", {})
-if anuncio.get("id"):
-    st.info(f"Anúncio selecionado: {anuncio['id']}")
-
-st.subheader("📸 Padrão de imagens do Luna Seller")
-st.write("O conjunto padrão terá até 5 imagens profissionais para revisão:")
-st.markdown("**1. Foto principal — capa do anúncio**")
-st.write("Produto grande em destaque sobre fundo branco, com até 3 círculos laterais mostrando detalhes reais ou formas de uso quando isso puder ser feito com segurança.")
-st.markdown("**2. Foto de detalhes do produto**")
-st.write("Produto completo em destaque com closes profissionais de componentes e acabamento reais.")
-st.markdown("**3. Foto de benefícios**")
-st.write("Apresenta os principais benefícios com textos curtos e profissionais em português.")
-st.markdown("**4. Foto do produto em uso**")
-st.write("Mostra o produto em um ambiente ou situação realista e adequada à sua finalidade.")
-st.markdown("**5. Foto informativa**")
-st.write("Reúne informações úteis confirmadas no anúncio, sem inventar especificações.")
-
-st.divider()
-st.subheader("🖼️ Imagens preparadas para revisão")
-
-foto_original = None
 foto_salva = st.session_state.get("foto_original_anuncio")
-if isinstance(foto_salva, dict) and foto_salva.get("bytes"):
-    foto_original = foto_salva["bytes"]
-else:
+foto_original = foto_salva.get("bytes") if isinstance(foto_salva, dict) else None
+resultado_anuncio = st.session_state.get("modo_vendedora_resultado", {}) or {}
+
+if foto_original is None:
     for chave, valor in st.session_state.items():
         if str(chave).startswith("foto_produto_") and valor is not None:
             foto_original = valor.getvalue() if hasattr(valor, "getvalue") else valor
@@ -49,14 +29,17 @@ if "fotos_preparadas" not in st.session_state:
     st.session_state["fotos_preparadas"] = []
 
 
+def atualizar_lista_fotos():
+    chaves = ["foto_principal_ia", "foto_detalhes_ia", "foto_beneficios_ia"]
+    st.session_state["fotos_preparadas"] = [st.session_state[c] for c in chaves if st.session_state.get(c)]
+
+
 def gerar_imagem(chave, prompt, mensagem):
     api_key = st.secrets.get("OPENAI_API_KEY")
     if not api_key:
         st.error("A chave da OpenAI não foi encontrada nas configurações do aplicativo.")
         return
-    nome = "produto.jpg"
-    if isinstance(foto_salva, dict):
-        nome = foto_salva.get("nome") or nome
+    nome = foto_salva.get("nome", "produto.jpg") if isinstance(foto_salva, dict) else "produto.jpg"
     arquivo = io.BytesIO(foto_original)
     arquivo.name = nome
     client = OpenAI(api_key=api_key)
@@ -64,69 +47,82 @@ def gerar_imagem(chave, prompt, mensagem):
         model="gpt-image-1.5", image=arquivo, prompt=prompt,
         size="1024x1024", quality="medium", input_fidelity="high"
     )
-    imagem_bytes = base64.b64decode(resultado.data[0].b64_json)
-    st.session_state[chave] = imagem_bytes
-    fotos = []
-    if st.session_state.get("foto_principal_ia"):
-        fotos.append(st.session_state["foto_principal_ia"])
-    if st.session_state.get("foto_detalhes_ia"):
-        fotos.append(st.session_state["foto_detalhes_ia"])
-    st.session_state["fotos_preparadas"] = fotos
+    st.session_state[chave] = base64.b64decode(resultado.data[0].b64_json)
+    atualizar_lista_fotos()
     st.success(mensagem)
 
 
 st.divider()
-st.subheader("✨ 1. Criar foto principal profissional")
+st.subheader("✨ 1. Foto principal profissional")
 st.caption("Padrão aprovado: produto grande, fundo branco e detalhes laterais em círculos.")
 if foto_original is not None and st.button("✨ Gerar foto principal", type="primary", use_container_width=True):
     try:
-        with st.spinner("Preparando a foto principal no padrão Luna Seller..."):
+        with st.spinner("Preparando a foto principal..."):
             gerar_imagem(
                 "foto_principal_ia",
-                "Crie uma imagem quadrada profissional de catálogo usando SOMENTE o produto real da referência. Fundo branco puro. Produto principal grande, nítido e com contraste comercial forte, ocupando cerca de 65 a 75% da imagem no lado esquerdo ou centro-esquerda. No lado direito, até três círculos verticais com borda fina escura mostrando detalhes REAIS do próprio produto. Preserve rigorosamente formato, proporções, cor, acabamento, peças, tampa e acessórios. Não redesenhe, não troque peças e não invente funções, acessórios, alimentos, líquidos, medidas, capacidade, marca ou logotipo. Se não houver informação para uma cena de uso segura, use apenas closes de detalhes visíveis. Sem textos, números, selos ou ícones. Iluminação de estúdio clara, reflexos definidos, boa saturação e contraste, sombras suaves, alta nitidez e aparência premium de e-commerce.",
+                "Crie uma imagem quadrada profissional de catálogo usando SOMENTE o produto real da referência. Fundo branco puro. Produto principal grande, nítido e com contraste comercial forte, ocupando cerca de 65 a 75% da imagem no lado esquerdo ou centro-esquerda. No lado direito, até três círculos verticais com borda fina escura mostrando detalhes REAIS do próprio produto. Preserve rigorosamente formato, proporções, cor, acabamento, peças, tampa e acessórios. Não redesenhe, não troque peças e não invente funções, acessórios, medidas, capacidade, marca ou logotipo. Sem textos, números, selos ou ícones. Iluminação de estúdio clara, reflexos definidos, boa saturação e contraste, alta nitidez e aparência premium de e-commerce.",
                 "✅ Foto principal criada. Confira antes de aprovar."
             )
     except Exception as erro:
         st.error(f"Não foi possível gerar a foto principal: {erro}")
-
 if st.session_state.get("foto_principal_ia"):
     st.image(st.session_state["foto_principal_ia"], caption="Foto principal profissional", width=520)
 
 st.divider()
-st.subheader("🔎 2. Criar foto de detalhes")
-st.write("A segunda imagem destaca acabamento e componentes reais do produto em closes profissionais.")
-st.caption("Sem inventar peças, medidas ou características.")
-
-if foto_original is not None:
-    if st.button("🔎 Gerar foto de detalhes", use_container_width=True):
-        try:
-            with st.spinner("Preparando a foto de detalhes..."):
-                gerar_imagem(
-                    "foto_detalhes_ia",
-                    "Crie a segunda imagem profissional de um anúncio de marketplace usando SOMENTE o produto real da foto de referência. A imagem deve ser quadrada, clara, moderna e com fundo branco ou cinza muito claro. Mostre o produto completo de forma elegante e inclua de 2 a 4 closes bem organizados dos detalhes visuais mais importantes que realmente aparecem na referência, como tampa, abertura, encaixe, acabamento, textura, bordas ou componentes existentes. Preserve exatamente formato, proporções, cor, quantidade de peças e acessórios reais. Não invente componentes, funções, materiais específicos, medidas, capacidade, marca, logotipo, líquidos ou acessórios. Não escreva especificações técnicas. Não altere o design do produto. Use iluminação de estúdio forte e limpa, contraste agradável, reflexos definidos quando adequados, alta nitidez e aparência premium de catálogo de e-commerce.",
-                    "✅ Foto de detalhes criada. Confira o resultado abaixo."
-                )
-        except Exception as erro:
-            st.error(f"Não foi possível gerar a foto de detalhes: {erro}")
-else:
-    st.warning("Envie primeiro uma foto no Modo Vendedora.")
-
+st.subheader("🔎 2. Foto de detalhes")
+st.write("A segunda imagem pode usar um ambiente realista e sofisticado para valorizar o produto e seus detalhes.")
+st.caption("O fundo não precisa ser branco. O produto deve continuar fiel ao original.")
+if foto_original is not None and st.button("🔎 Gerar foto de detalhes", use_container_width=True):
+    try:
+        with st.spinner("Preparando a foto de detalhes..."):
+            gerar_imagem(
+                "foto_detalhes_ia",
+                "Crie a segunda imagem profissional de um anúncio de marketplace usando SOMENTE o produto real da referência. Use um ambiente realista, elegante e coerente com a finalidade do produto; NÃO use fundo branco simples. Faça uma composição premium de catálogo: produto completo em destaque e de 2 a 4 closes organizados de detalhes reais, como tampa, abertura, encaixe, acabamento, textura ou componentes visíveis. O cenário pode ter superfície e fundo desfocados com iluminação quente ou natural, mas nunca deve esconder o produto. Preserve exatamente formato, proporções, cor, quantidade de peças e acessórios reais. Não invente componentes, funções, materiais específicos, medidas, capacidade, marca, logotipo ou acessórios. Não altere o design. Alta nitidez, contraste agradável e iluminação comercial sofisticada.",
+                "✅ Foto de detalhes criada. Confira o resultado abaixo."
+            )
+    except Exception as erro:
+        st.error(f"Não foi possível gerar a foto de detalhes: {erro}")
 if st.session_state.get("foto_detalhes_ia"):
     st.image(st.session_state["foto_detalhes_ia"], caption="Foto de detalhes profissional", width=520)
 
+st.divider()
+st.subheader("💡 3. Foto de benefícios")
+st.write("A terceira imagem apresenta benefícios de forma visual e profissional.")
+st.caption("O Luna Seller usa somente informações confirmadas no anúncio e características visíveis.")
+
+info_confirmada = " | ".join(
+    f"{campo}: {resultado_anuncio.get(campo)}"
+    for campo in ["produto", "marca", "modelo", "cor", "material"]
+    if resultado_anuncio.get(campo)
+)
+
+if foto_original is not None and st.button("💡 Gerar foto de benefícios", use_container_width=True):
+    try:
+        with st.spinner("Preparando a foto de benefícios..."):
+            gerar_imagem(
+                "foto_beneficios_ia",
+                f"Crie a terceira imagem profissional de marketplace usando SOMENTE o produto real da referência. Informações confirmadas disponíveis: {info_confirmada or 'nenhuma informação textual adicional confirmada'}. Mostre o produto fiel ao original em composição comercial atraente, com fundo contextual elegante e espaço visual organizado para destacar de 2 a 3 benefícios APENAS quando forem claramente confirmados pela imagem ou pelas informações confirmadas fornecidas. Se um benefício não estiver confirmado, não invente; prefira destacar visualmente acabamento, praticidade de componentes visíveis e apresentação do produto sem fazer alegações técnicas. Se usar texto, escreva em português do Brasil, muito curto, legível e sem erros, usando somente fatos confirmados. Nunca escreva capacidade, duração térmica, potência, resistência, certificação, material específico, compatibilidade ou desempenho sem confirmação. Preserve exatamente formato, cor, quantidade de peças e acessórios. Aparência premium, moderna e limpa de e-commerce.",
+                "✅ Foto de benefícios criada. Confira o resultado abaixo."
+            )
+    except Exception as erro:
+        st.error(f"Não foi possível gerar a foto de benefícios: {erro}")
+if st.session_state.get("foto_beneficios_ia"):
+    st.image(st.session_state["foto_beneficios_ia"], caption="Foto de benefícios profissional", width=520)
+
+atualizar_lista_fotos()
 fotos_preparadas = st.session_state["fotos_preparadas"]
 if not fotos_preparadas:
     st.warning("Ainda não há imagens profissionais preparadas nesta sessão.")
     st.stop()
 
+nomes_padrao = ["Foto principal profissional", "Foto de detalhes profissional", "Foto de benefícios profissional"]
 st.success(f"{len(fotos_preparadas)} imagem(ns) pronta(s) para revisão.")
-nomes_fotos = ["Foto principal profissional", "Foto de detalhes profissional"][:len(fotos_preparadas)]
-
 st.divider()
 st.subheader("🔎 Conferência das imagens")
 for i, foto in enumerate(fotos_preparadas):
-    st.markdown(f"### {i + 1}. {nomes_fotos[i]}")
-    st.image(foto, caption=nomes_fotos[i], width=420)
+    nome = nomes_padrao[i] if i < len(nomes_padrao) else f"Foto {i + 1}"
+    st.markdown(f"### {i + 1}. {nome}")
+    st.image(foto, caption=nome, width=420)
     st.divider()
 
 st.warning("Nenhuma imagem desta página é enviada automaticamente ao Mercado Livre.")
