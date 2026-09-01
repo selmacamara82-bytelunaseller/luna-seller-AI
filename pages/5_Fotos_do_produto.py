@@ -59,14 +59,18 @@ def gerar_imagem(chave, prompt, mensagem):
     rid = st.session_state.get("rascunho_id")
     if configurado() and rid:
         salvar_bytes(f"rascunhos/{rid}/fotos/{ARQUIVOS_FOTOS[chave]}", dados, "image/png")
-    atualizar_lista_fotos(); st.success(mensagem + (" 💾 Salva com segurança." if configurado() and rid else ""))
+    atualizar_lista_fotos()
+    st.session_state["mensagem_foto"] = mensagem + (" 💾 Salva com segurança." if configurado() and rid else "")
 
 
 def botao_regenerar(chave, rotulo, prompt):
     if st.session_state.get(chave) and st.button(f"🔄 Gerar outra {rotulo}", key=f"regen_{chave}", use_container_width=True):
         try:
-            with st.spinner("Criando uma nova opção..."): gerar_imagem(chave, prompt, "✅ Nova opção criada. Confira o resultado.")
-        except Exception as erro: st.error(f"Não foi possível gerar outra imagem: {erro}")
+            with st.spinner("Criando uma nova opção..."):
+                gerar_imagem(chave, prompt, "✅ Nova opção criada. Confira o resultado.")
+            st.rerun()
+        except Exception as erro:
+            st.error(f"Não foi possível gerar outra imagem: {erro}")
 
 restaurar_dados()
 foto_salva = st.session_state.get("foto_original_anuncio")
@@ -76,6 +80,9 @@ if foto_original is not None:
     with st.expander("Ver foto original"): st.image(foto_original, caption="Foto original do produto", width=420)
 else:
     st.info("Envie a foto no Modo Vendedora para iniciar um anúncio novo.")
+
+if st.session_state.get("mensagem_foto"):
+    st.success(st.session_state.pop("mensagem_foto"))
 
 prompt_principal = "Crie uma imagem quadrada profissional de catálogo usando SOMENTE o produto real da referência. Fundo branco puro. Produto principal grande no lado esquerdo ou centro-esquerda. No lado direito, até três círculos verticais mostrando detalhes REAIS. Preserve rigorosamente formato, cor, peças e acessórios. Não invente nem duplique itens. Sem textos. Alta nitidez e aparência premium."
 prompt_detalhes = "Crie uma imagem quadrada premium usando SOMENTE o produto real da referência. CENÁRIO OBRIGATORIAMENTE DIFERENTE DA FOTO PRINCIPAL: bancada clara de cozinha moderna ou mesa de madeira clara, iluminação natural de janela, ambiente claro e acolhedor. Mostre o produto completo e 2 a 4 closes de detalhes reais. Evite fundo preto, cinza escuro ou estúdio dramático. Preserve exatamente formato, cor, quantidade de peças e acessórios. Não invente nem duplique componentes. Sem texto. Alta nitidez e fotografia comercial elegante."
@@ -93,10 +100,14 @@ for indice,(titulo,chave,botao,prompt) in enumerate(secoes):
     else: st.caption("Visual minimalista claro para organizar informações e componentes reais.")
     if foto_original is not None and st.button(botao,key=f"gerar_{chave}",type="primary" if indice==0 else "secondary",use_container_width=True):
         try:
-            with st.spinner("Preparando imagem profissional..."): gerar_imagem(chave,prompt,"✅ Imagem criada. Confira o resultado abaixo.")
-        except Exception as erro: st.error(f"Não foi possível gerar a imagem: {erro}")
+            with st.spinner("Preparando imagem profissional..."):
+                gerar_imagem(chave,prompt,"✅ Imagem criada. Confira o resultado abaixo.")
+            st.rerun()
+        except Exception as erro:
+            st.error(f"Não foi possível gerar a imagem: {erro}")
     if st.session_state.get(chave):
-        st.image(st.session_state[chave],caption=NOMES_FOTOS[indice],width=520); botao_regenerar(chave,"versão",prompt)
+        st.image(st.session_state[chave],caption=NOMES_FOTOS[indice],width=520)
+        botao_regenerar(chave,"versão",prompt)
 
 atualizar_lista_fotos(); fotos_preparadas = st.session_state.get("fotos_preparadas",[])
 if not fotos_preparadas:
