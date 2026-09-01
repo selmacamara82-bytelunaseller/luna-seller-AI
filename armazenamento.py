@@ -23,9 +23,6 @@ def _url_base():
     url = (_segredo("SUPABASE_URL") or "").strip().rstrip("/")
     if not url:
         raise RuntimeError("O endereço do armazenamento ainda não está configurado.")
-
-    # O painel do Supabase pode mostrar a URL da Data API terminando em /rest/v1.
-    # Para o Storage precisamos sempre voltar ao domínio base do projeto.
     parsed = urllib.parse.urlsplit(url)
     if not parsed.scheme or not parsed.netloc:
         raise RuntimeError("O endereço do Supabase não é válido.")
@@ -65,12 +62,7 @@ def criar_id_rascunho(dados):
 
 
 def salvar_bytes(caminho, dados, content_type="application/octet-stream"):
-    req = urllib.request.Request(
-        _objeto_url(caminho),
-        data=dados,
-        headers=_headers(content_type, upsert=True),
-        method="POST",
-    )
+    req = urllib.request.Request(_objeto_url(caminho), data=dados, headers=_headers(content_type, upsert=True), method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as resposta:
             resposta.read()
@@ -85,9 +77,12 @@ def baixar_bytes(caminho):
         with urllib.request.urlopen(req, timeout=30) as resposta:
             return resposta.read()
     except urllib.error.HTTPError as erro:
-        if erro.code == 404:
-            return None
         detalhe = erro.read().decode("utf-8", errors="ignore")
+        # O Storage pode devolver HTTP 400 com statusCode 404/NoSuchKey
+        # quando o objeto simplesmente ainda não existe. Isso é normal antes
+        # de a respectiva foto da IA ser gerada.
+        if erro.code == 404 or '"statusCode":"404"' in detalhe or '"code":"NoSuchKey"' in detalhe or 'Object not found' in detalhe:
+            return None
         raise RuntimeError(f"Supabase respondeu {erro.code}: {detalhe or erro.reason}") from erro
     except Exception:
         return None
