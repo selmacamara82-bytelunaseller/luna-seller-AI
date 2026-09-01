@@ -1,9 +1,11 @@
 import hashlib
 import json
 import os
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import streamlit as st
-from supabase import create_client
 
 
 def _segredo(nome, padrao=""):
@@ -17,16 +19,41 @@ def configurado():
     return bool(_segredo("SUPABASE_URL") and _segredo("SUPABASE_SERVICE_ROLE_KEY"))
 
 
-def _cliente():
-    url = _segredo("SUPABASE_URL")
+def _url_base():
+    url = (_segredo("SUPABASE_URL") or "").rstrip("/")
+    if not url:
+        raise RuntimeError("O endereço do armazenamento ainda não está configurado.")
+    return url
+
+
+def _chave():
     chave = _segredo("SUPABASE_SERVICE_ROLE_KEY")
-    if not url or not chave:
-        raise RuntimeError("O armazenamento seguro ainda não está configurado.")
-    return create_client(url, chave)
+    if not chave:
+        raise RuntimeError("A chave do armazenamento ainda não está configurada.")
+    return chave
 
 
 def _bucket():
     return _segredo("SUPABASE_BUCKET", "luna-seller-fotos")
+
+
+def _headers(content_type=None, upsert=False):
+    chave = _chave()
+    headers = {
+        "apikey": chave,
+        "Authorization": f"Bearer {chave}",
+    }
+    if content_type:
+        headers["Content-Type"] = content_type
+    if upsert:
+        headers["x-upsert"] = "true"
+    return headers
+
+
+def _objeto_url(caminho):
+    bucket = urllib.parse.quote(_bucket(), safe="")
+    partes = [urllib.parse.quote(parte, safe="") for parte in caminho.split("/")]
+    return f"{_url_base()}/storage/v1/object/{bucket}/{'/'.join(partes)}"
 
 
 def criar_id_rascunho(dados):
@@ -34,17 +61,30 @@ def criar_id_rascunho(dados):
 
 
 def salvar_bytes(caminho, dados, content_type="application/octet-stream"):
-    storage = _cliente().storage.from_(_bucket())
-    opcoes = {"content-type": content_type, "upsert": "true"}
+    req = urllib.request.Request(
+        _objeto_url(caminho),
+        data=dados,
+        headers=_headers(content_type, upsert=True),
+        method="POST",
+    )
     try:
-        storage.upload(path=caminho, file=dados, file_options=opcoes)
-    except Exception:
-        storage.update(path=caminho, file=dados, file_options={"content-type": content_type})
+        with urllib.request.urlopen(req, timeout=30) as resposta:
+            resposta.read()
+    except urllib.error.HTTPError as erro:
+        detalhe = erro.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Supabase respondeu {erro.code}: {detalhe or erro.reason}") from erro
 
 
 def baixar_bytes(caminho):
+    req = urllib.request.Request(_objeto_url(caminho), headers=_headers(), method="GET")
     try:
-        return _cliente().storage.from_(_bucket()).download(caminho)
+        with urllib.request.urlopen(req, timeout=30) as resposta:
+            return resposta.read()
+    except urllib.error.HTTPError as erro:
+        if erro.code == 404:
+            return None
+        detalhe = erro.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Supabase respondeu {erro.code}: {detalhe or erro.reason}") from erro
     except Exception:
         return None
 
