@@ -37,9 +37,9 @@ def salvar_bytes(caminho, dados, content_type="application/octet-stream"):
     storage = _cliente().storage.from_(_bucket())
     opcoes = {"content-type": content_type, "upsert": "true"}
     try:
-        storage.upload(caminho, dados, opcoes)
+        storage.upload(path=caminho, file=dados, file_options=opcoes)
     except Exception:
-        storage.update(caminho, dados, opcoes)
+        storage.update(path=caminho, file=dados, file_options={"content-type": content_type})
 
 
 def baixar_bytes(caminho):
