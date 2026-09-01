@@ -20,21 +20,27 @@ def configurado():
 
 
 def _url_base():
-    url = (_segredo("SUPABASE_URL") or "").rstrip("/")
+    url = (_segredo("SUPABASE_URL") or "").strip().rstrip("/")
     if not url:
         raise RuntimeError("O endereço do armazenamento ainda não está configurado.")
-    return url
+
+    # O painel do Supabase pode mostrar a URL da Data API terminando em /rest/v1.
+    # Para o Storage precisamos sempre voltar ao domínio base do projeto.
+    parsed = urllib.parse.urlsplit(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise RuntimeError("O endereço do Supabase não é válido.")
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
 
 
 def _chave():
-    chave = _segredo("SUPABASE_SERVICE_ROLE_KEY")
+    chave = (_segredo("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
     if not chave:
         raise RuntimeError("A chave do armazenamento ainda não está configurada.")
     return chave
 
 
 def _bucket():
-    return _segredo("SUPABASE_BUCKET", "luna-seller-fotos")
+    return (_segredo("SUPABASE_BUCKET", "luna-seller-fotos") or "luna-seller-fotos").strip().strip("/")
 
 
 def _headers(content_type=None, upsert=False):
@@ -48,7 +54,7 @@ def _headers(content_type=None, upsert=False):
 
 
 def _objeto_url(caminho):
-    bucket = urllib.parse.quote(_bucket().strip().strip("/"), safe="")
+    bucket = urllib.parse.quote(_bucket(), safe="")
     caminho_limpo = str(caminho).strip().strip("/")
     caminho_codificado = urllib.parse.quote(caminho_limpo, safe="/")
     return f"{_url_base()}/storage/v1/object/{bucket}/{caminho_codificado}"
@@ -59,7 +65,12 @@ def criar_id_rascunho(dados):
 
 
 def salvar_bytes(caminho, dados, content_type="application/octet-stream"):
-    req = urllib.request.Request(_objeto_url(caminho), data=dados, headers=_headers(content_type, upsert=True), method="POST")
+    req = urllib.request.Request(
+        _objeto_url(caminho),
+        data=dados,
+        headers=_headers(content_type, upsert=True),
+        method="POST",
+    )
     try:
         with urllib.request.urlopen(req, timeout=30) as resposta:
             resposta.read()
