@@ -39,10 +39,7 @@ def _bucket():
 
 def _headers(content_type=None, upsert=False):
     chave = _chave()
-    headers = {
-        "apikey": chave,
-        "Authorization": f"Bearer {chave}",
-    }
+    headers = {"apikey": chave, "Authorization": f"Bearer {chave}"}
     if content_type:
         headers["Content-Type"] = content_type
     if upsert:
@@ -51,9 +48,10 @@ def _headers(content_type=None, upsert=False):
 
 
 def _objeto_url(caminho):
-    bucket = urllib.parse.quote(_bucket(), safe="")
-    partes = [urllib.parse.quote(parte, safe="") for parte in caminho.split("/")]
-    return f"{_url_base()}/storage/v1/object/{bucket}/{'/'.join(partes)}"
+    bucket = urllib.parse.quote(_bucket().strip().strip("/"), safe="")
+    caminho_limpo = str(caminho).strip().strip("/")
+    caminho_codificado = urllib.parse.quote(caminho_limpo, safe="/")
+    return f"{_url_base()}/storage/v1/object/{bucket}/{caminho_codificado}"
 
 
 def criar_id_rascunho(dados):
@@ -61,12 +59,7 @@ def criar_id_rascunho(dados):
 
 
 def salvar_bytes(caminho, dados, content_type="application/octet-stream"):
-    req = urllib.request.Request(
-        _objeto_url(caminho),
-        data=dados,
-        headers=_headers(content_type, upsert=True),
-        method="POST",
-    )
+    req = urllib.request.Request(_objeto_url(caminho), data=dados, headers=_headers(content_type, upsert=True), method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as resposta:
             resposta.read()
