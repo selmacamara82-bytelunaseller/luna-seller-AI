@@ -9,28 +9,37 @@ CHAVES_FOTOS = ["foto_principal_ia", "foto_detalhes_ia", "foto_beneficios_ia", "
 ARQUIVOS_FOTOS = {chave: f"{i+1}_{chave}.png" for i, chave in enumerate(CHAVES_FOTOS)}
 
 
+def resultado_valido(valor):
+    return isinstance(valor, dict) and bool(valor.get("titulo") or valor.get("descricao"))
+
+
 def restaurar():
     if not configurado(): return
     try:
-        if not st.session_state.get("rascunho_id"):
-            salvo = restaurar_ultimo_rascunho()
-            if salvo:
-                st.session_state["rascunho_id"] = salvo["rascunho_id"]
-                if salvo["estado"].get("resultado"):
-                    st.session_state["modo_vendedora_resultado"] = salvo["estado"]["resultado"]
-        rid = st.session_state.get("rascunho_id")
-        if not rid: return
-        estado = carregar_estado(rid)
-        if estado.get("resultado") and not st.session_state.get("modo_vendedora_resultado"):
+        salvo = restaurar_ultimo_rascunho()
+        rid_atual = st.session_state.get("rascunho_id")
+        # O ponteiro do último rascunho é a fonte principal para manter texto, fotos e vídeo juntos.
+        if salvo:
+            rid_salvo = salvo["rascunho_id"]
+            estado_salvo = salvo.get("estado", {}) or {}
+            if not rid_atual or rid_atual != rid_salvo:
+                st.session_state["rascunho_id"] = rid_salvo
+                rid_atual = rid_salvo
+            if resultado_valido(estado_salvo.get("resultado")):
+                st.session_state["modo_vendedora_resultado"] = estado_salvo["resultado"]
+        if not rid_atual: return
+        estado = carregar_estado(rid_atual) or {}
+        # Sempre prefere o resultado persistido quando ele contém o texto do anúncio.
+        if resultado_valido(estado.get("resultado")):
             st.session_state["modo_vendedora_resultado"] = estado["resultado"]
         st.session_state["fotos_aprovadas"] = bool(estado.get("fotos_aprovadas", False))
         st.session_state["video_aprovado"] = bool(estado.get("video_aprovado", False))
         for chave in CHAVES_FOTOS:
             if not st.session_state.get(chave):
-                dados = baixar_bytes(f"rascunhos/{rid}/fotos/{ARQUIVOS_FOTOS[chave]}")
+                dados = baixar_bytes(f"rascunhos/{rid_atual}/fotos/{ARQUIVOS_FOTOS[chave]}")
                 if dados: st.session_state[chave] = dados
         if not st.session_state.get("video_produto_bytes"):
-            video = baixar_bytes(f"rascunhos/{rid}/video/video_produto.mp4")
+            video = baixar_bytes(f"rascunhos/{rid_atual}/video/video_produto.mp4")
             if video: st.session_state["video_produto_bytes"] = video
     except Exception as erro:
         st.warning(f"Não foi possível recuperar todos os dados agora: {erro}")
