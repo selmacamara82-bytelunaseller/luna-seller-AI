@@ -23,7 +23,13 @@ def criar_url_autorizacao(client_id, redirect_uri, state):
 def trocar_codigo_por_token(client_id, client_secret, redirect_uri, code):
     dados = {"grant_type": "authorization_code", "client_id": str(client_id), "client_secret": client_secret, "code": code, "redirect_uri": redirect_uri}
     resposta = requests.post(URL_TOKEN, data=dados, headers={"accept": "application/json", "content-type": "application/x-www-form-urlencoded"}, timeout=30)
-    resposta.raise_for_status(); return resposta.json()
+    if not resposta.ok:
+        try:
+            detalhe = resposta.json()
+        except ValueError:
+            detalhe = resposta.text
+        raise RuntimeError(f"Mercado Livre recusou a troca do código por token (HTTP {resposta.status_code}): {detalhe}")
+    return resposta.json()
 
 
 def renovar_token(client_id, client_secret, refresh_token):
